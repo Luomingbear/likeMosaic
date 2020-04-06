@@ -78,6 +78,34 @@ Map<AgoraAudioSampleRateType, int> _resolveAudioSampleRate = {
   AgoraAudioSampleRateType.HighRateType: 48000
 };
 
+class RtmMessage {
+  String text;
+  double serverReceivedTs;
+  bool isOfflineMessage;
+
+  RtmMessage.fromJson(Map<dynamic, dynamic> json)
+      : text = json['text'],
+        serverReceivedTs = json['serverReceivedTs'],
+        isOfflineMessage = json['isOfflineMessage'];
+  Map<String, dynamic> toJson() => {
+        'text': text,
+        'serverReceivedTs': serverReceivedTs,
+        'isOfflineMessage': isOfflineMessage
+      };
+}
+
+class ErrorInfo {
+  int errorCode;
+  String errorDesc = "";
+
+  ErrorInfo.froJson(Map<dynamic, dynamic> json)
+      : errorCode = json['errorCode'],
+        errorDesc = json['errorDesc'];
+
+  Map<String, dynamic> toJson() =>
+      {'errorCode': errorCode, 'errorDesc': errorDesc};
+}
+
 class AgoraLiveTranscoding {
   int width;
   int height;

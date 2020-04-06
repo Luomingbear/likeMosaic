@@ -8,7 +8,7 @@
 **/.flutter-plugins
 **/.flutter-plugins-dependencies
 **/.packages
-
+**/.vscode
 
 **/ios/**/.vagrant/
 **/ios/**/DerivedData/

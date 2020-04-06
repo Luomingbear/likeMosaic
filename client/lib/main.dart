@@ -1,8 +1,7 @@
-import 'package:agora_flutter_quickstart/src/pages/CallPage.dart';
-import 'package:agora_flutter_quickstart/src/pages/PairPage.dart';
 import 'package:agora_flutter_quickstart/src/pages/call.dart';
+
+import "src/pages/CallPage.dart";
 import 'package:flutter/material.dart';
-import './src/pages/index.dart';
 
 void main() => runApp(MyApp());
 
@@ -13,9 +12,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.purple,
       ),
-      home: IndexPage(),
+      home: CallPage(
+        channelName: "bearever",
+      ),
     );
   }
 }

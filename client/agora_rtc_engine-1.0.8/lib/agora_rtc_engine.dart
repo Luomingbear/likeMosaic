@@ -397,6 +397,21 @@ class AgoraRtcEngine {
   /// The SDK triggers this callback once every two seconds for each remote user/host. If a channel includes multiple remote users, the SDK triggers this callback as many times.
   static void Function(RemoteVideoStats stats) onRemoteVideoStats;
 
+  //rtm connect state change callback
+  static void Function(int state, int reason) onRtmConnectionStateChanged;
+
+  //rtm received message callback
+  static void Function(RtmMessage message, String peerId) onMessageReceived;
+
+  //rtm on token expired callback
+  static void Function() onTokenExpired;
+
+  //rtm login succeed callback
+  static void Function() onLoginSuccess;
+
+  //rtm login failed callback
+  static void Function(ErrorInfo errorInfo) onLoginFailure;
+
   // Miscellaneous Events
   /// Occurs when the media engine is loaded.
   static VoidCallback onMediaEngineLoadSuccess;
@@ -409,6 +424,27 @@ class AgoraRtcEngine {
 
   /// Occurs when received channel media relay event
   static void Function(int event) onReceivedChannelMediaRelayEvent;
+
+  // init rtm client
+  static Future<void> init(String appId) async {
+    await _channel.invokeMethod("init", {"appId": appId});
+  }
+
+  // login rtm
+  static Future<void> login(String userId) async {
+    await _channel.invokeMethod("login", {"userId": userId});
+  }
+
+  // login rtm
+  static Future<void> logout(String userId) async {
+    await _channel.invokeMethod("logout");
+  }
+
+  // send peer message with rtm
+  static Future<void> sendPeerMessage(String userId, String content) async {
+    await _channel.invokeMethod(
+        "sendPeerMessage", {"userId": userId, "content": content});
+  }
 
   // Core Methods
   /// Creates an RtcEngine instance.
@@ -1558,7 +1594,32 @@ class AgoraRtcEngine {
           onReceivedChannelMediaRelayEvent(map["event"]);
         }
         break;
-
+      //rtm event
+      case 'onConnectionStateChanged':
+        if (onConnectionStateChanged != null) {
+          onConnectionStateChanged(map['state'], map['reason']);
+        }
+        break;
+      case 'onMessageReceived':
+        if (onMessageReceived != null) {
+          onMessageReceived(RtmMessage.fromJson(map['message']), map['peerId']);
+        }
+        break;
+      case 'onTokenExpired':
+        if (onTokenExpired != null) {
+          onTokenExpired();
+        }
+        break;
+      case 'onLoginSuccess':
+        if (onLoginSuccess != null) {
+          onLoginSuccess();
+        }
+        break;
+      case 'onLoginFailure':
+        if (onLoginFailure != null) {
+          onLoginFailure(ErrorInfo.froJson(map));
+        }
+        break;
       default:
     }
   }
