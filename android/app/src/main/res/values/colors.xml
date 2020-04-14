@@ -7,4 +7,8 @@
     <!-- Chat Activity -->
     <color name="localBackground">#827b92</color>
     <color name="remoteBackground">#484258</color>
+
+
+    <color name="color_pink">#FF8585</color>
+    <color name="color_purple">#EA45D5</color>
 </resources>

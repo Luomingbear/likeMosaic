@@ -1,24 +1,36 @@
-package io.agora.tutorials1v1vcall;
+package cn.bearever.likemosaic;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.AnimationDrawable;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
+
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.appcompat.app.AppCompatActivity;
+
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.animation.Animation;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-import io.agora.uikit.logger.LoggerRecyclerView;
+import com.bumptech.glide.Glide;
+
+import java.util.ArrayList;
+
+import cn.bearever.likemosaic.bean.TopicBean;
+import cn.bearever.likemosaic.home.MosaicVideoSink;
 import io.agora.rtc.IRtcEngineEventHandler;
 import io.agora.rtc.RtcEngine;
+import io.agora.rtc.mediaio.AgoraSurfaceView;
+import io.agora.rtc.mediaio.IVideoSink;
 import io.agora.rtc.video.VideoCanvas;
 import io.agora.rtc.video.VideoEncoderConfiguration;
 
@@ -30,11 +42,8 @@ public class VideoChatViewActivity extends AppCompatActivity {
     // Permission WRITE_EXTERNAL_STORAGE is not mandatory
     // for Agora RTC SDK, just in case if you wanna save
     // logs to external sdcard.
-    private static final String[] REQUESTED_PERMISSIONS = {
-            Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.CAMERA,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
-    };
+    private String mChannel = "";
+    private ArrayList<TopicBean> mTopicList;
 
     private RtcEngine mRtcEngine;
     private boolean mCallEnd;
@@ -45,12 +54,9 @@ public class VideoChatViewActivity extends AppCompatActivity {
     private SurfaceView mLocalView;
     private SurfaceView mRemoteView;
 
-    private ImageView mCallBtn;
+    private ImageView mLikeIv;
     private ImageView mMuteBtn;
     private ImageView mSwitchCameraBtn;
-
-    // Customized logger view
-    private LoggerRecyclerView mLogView;
 
     /**
      * Event handler registered into RTC engine for RTC callbacks.
@@ -63,7 +69,7 @@ public class VideoChatViewActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mLogView.logI("Join channel success, uid: " + (uid & 0xFFFFFFFFL));
+                    logI("Join channel success, uid: " + (uid & 0xFFFFFFFFL));
                 }
             });
         }
@@ -73,7 +79,7 @@ public class VideoChatViewActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mLogView.logI("First remote video decoded, uid: " + (uid & 0xFFFFFFFFL));
+                    logI("First remote video decoded, uid: " + (uid & 0xFFFFFFFFL));
                     setupRemoteVideo(uid);
                 }
             });
@@ -84,12 +90,16 @@ public class VideoChatViewActivity extends AppCompatActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mLogView.logI("User offline, uid: " + (uid & 0xFFFFFFFFL));
+                    logI("User offline, uid: " + (uid & 0xFFFFFFFFL));
                     onRemoteUserLeft();
                 }
             });
         }
     };
+
+    private void logI(String s) {
+        Log.i(TAG, s);
+    }
 
     private void setupRemoteVideo(int uid) {
         // Only one remote video view is available for this
@@ -112,6 +122,7 @@ public class VideoChatViewActivity extends AppCompatActivity {
         mRemoteContainer.addView(mRemoteView);
         mRtcEngine.setupRemoteVideo(new VideoCanvas(mRemoteView, VideoCanvas.RENDER_MODE_HIDDEN, uid));
         mRemoteView.setTag(uid);
+//        mRtcEngine.setRemoteVideoRenderer(uid, new MosaicVideoSink());
     }
 
     private void onRemoteUserLeft() {
@@ -128,16 +139,22 @@ public class VideoChatViewActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        initData(savedInstanceState);
+
         setContentView(R.layout.activity_video_chat_view);
         initUI();
+        initEngineAndJoinChannel();
+    }
 
-        // Ask for permissions at runtime.
-        // This is just an example set of permissions. Other permissions
-        // may be needed, and please refer to our online documents.
-        if (checkSelfPermission(REQUESTED_PERMISSIONS[0], PERMISSION_REQ_ID) &&
-                checkSelfPermission(REQUESTED_PERMISSIONS[1], PERMISSION_REQ_ID) &&
-                checkSelfPermission(REQUESTED_PERMISSIONS[2], PERMISSION_REQ_ID)) {
-            initEngineAndJoinChannel();
+    private void initData(Bundle saveInstanceState) {
+        if (getIntent() != null) {
+            Intent intent = getIntent();
+            mChannel = intent.getStringExtra(Constant.KEY_CHANNEL);
+            mTopicList = (ArrayList<TopicBean>) intent.getSerializableExtra(Constant.KEY_TOPIC_LIST);
+        }
+        if (saveInstanceState != null) {
+            mChannel = saveInstanceState.getString(Constant.KEY_CHANNEL);
+            mTopicList = (ArrayList<TopicBean>) saveInstanceState.getSerializable(Constant.KEY_TOPIC_LIST);
         }
     }
 
@@ -145,30 +162,10 @@ public class VideoChatViewActivity extends AppCompatActivity {
         mLocalContainer = findViewById(R.id.local_video_view_container);
         mRemoteContainer = findViewById(R.id.remote_video_view_container);
 
-        mCallBtn = findViewById(R.id.btn_call);
         mMuteBtn = findViewById(R.id.btn_mute);
-        mSwitchCameraBtn = findViewById(R.id.btn_switch_camera);
-
-        mLogView = findViewById(R.id.log_recycler_view);
-
-        // Sample logs are optional.
-        showSampleLogs();
-    }
-
-    private void showSampleLogs() {
-        mLogView.logI("Welcome to Agora 1v1 video call");
-        mLogView.logW("You will see custom logs here");
-        mLogView.logE("You can also use this to show errors");
-    }
-
-    private boolean checkSelfPermission(String permission, int requestCode) {
-        if (ContextCompat.checkSelfPermission(this, permission) !=
-                PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, REQUESTED_PERMISSIONS, requestCode);
-            return false;
-        }
-
-        return true;
+        mLikeIv = findViewById(R.id.iv_like);
+        mLikeIv.clearAnimation();
+        ((AnimationDrawable)mLikeIv.getDrawable()).start();
     }
 
     @Override
@@ -241,10 +238,17 @@ public class VideoChatViewActivity extends AppCompatActivity {
         // Our server will assign one and return the uid via the event
         // handler callback function (onJoinChannelSuccess) after
         // joining the channel successfully.
-        mLocalView = RtcEngine.CreateRendererView(getBaseContext());
-        mLocalView.setZOrderMediaOverlay(true);
+        //
+
+//        mLocalView = RtcEngine.CreateRendererView(getBaseContext());
+//        mLocalView.setZOrderMediaOverlay(true);
+//        mLocalContainer.addView(mLocalView);
+//        mRtcEngine.setLocalVideoRenderer(new MosaicVideoSink());
+//        mRtcEngine.setupLocalVideo(new VideoCanvas(mLocalView, VideoCanvas.RENDER_MODE_HIDDEN, 0));
+
+        mLocalView = new MosaicVideoSink(this);
         mLocalContainer.addView(mLocalView);
-        mRtcEngine.setupLocalVideo(new VideoCanvas(mLocalView, VideoCanvas.RENDER_MODE_HIDDEN, 0));
+        mRtcEngine.setLocalVideoRenderer((IVideoSink) mLocalView);
     }
 
     private void joinChannel() {
@@ -281,20 +285,6 @@ public class VideoChatViewActivity extends AppCompatActivity {
 
     public void onSwitchCameraClicked(View view) {
         mRtcEngine.switchCamera();
-    }
-
-    public void onCallClicked(View view) {
-        if (mCallEnd) {
-            startCall();
-            mCallEnd = false;
-            mCallBtn.setImageResource(R.drawable.btn_endcall);
-        } else {
-            endCall();
-            mCallEnd = true;
-            mCallBtn.setImageResource(R.drawable.btn_startcall);
-        }
-
-        showButtons(!mCallEnd);
     }
 
     private void startCall() {
