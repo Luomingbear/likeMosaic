@@ -168,35 +168,6 @@ public class VideoChatViewActivity extends AppCompatActivity {
         ((AnimationDrawable)mLikeIv.getDrawable()).start();
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions, @NonNull int[] grantResults) {
-
-        if (requestCode == PERMISSION_REQ_ID) {
-            if (grantResults[0] != PackageManager.PERMISSION_GRANTED ||
-                    grantResults[1] != PackageManager.PERMISSION_GRANTED ||
-                    grantResults[2] != PackageManager.PERMISSION_GRANTED) {
-                showLongToast("Need permissions " + Manifest.permission.RECORD_AUDIO +
-                        "/" + Manifest.permission.CAMERA + "/" + Manifest.permission.WRITE_EXTERNAL_STORAGE);
-                finish();
-                return;
-            }
-
-            // Here we continue only if all permissions are granted.
-            // The permissions can also be granted in the system settings manually.
-            initEngineAndJoinChannel();
-        }
-    }
-
-    private void showLongToast(final String msg) {
-        this.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-
     private void initEngineAndJoinChannel() {
         // This is our usual steps for joining
         // a channel and starting a call.
@@ -205,6 +176,7 @@ public class VideoChatViewActivity extends AppCompatActivity {
         setupLocalVideo();
         joinChannel();
     }
+
 
     private void initializeEngine() {
         try {

@@ -2,9 +2,6 @@ package cn.bearever.likemosaic.home;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Rect;
 import android.renderscript.Allocation;
 import android.renderscript.Element;
 import android.renderscript.RenderScript;
@@ -13,10 +10,7 @@ import android.renderscript.Type;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
-import java.nio.ByteBuffer;
-
 import io.agora.rtc.mediaio.AgoraSurfaceView;
-import io.agora.rtc.mediaio.IVideoSink;
 import io.agora.rtc.mediaio.MediaIO;
 
 /**
@@ -25,46 +19,48 @@ import io.agora.rtc.mediaio.MediaIO;
  */
 public class MosaicVideoSink extends AgoraSurfaceView {
     private static final String TAG = "MosaicVideoSink";
-    private SurfaceHolder mHolder;
-    private FastYUVtoRGB mFastYUV2RGB;
-    private Paint mPaint;
+
+    static {
+        System.loadLibrary("mosaic");
+    }
 
     public MosaicVideoSink(Context context) {
         super(context);
-        setPixelFormat(MediaIO.PixelFormat.NV21);
+        setPixelFormat(MediaIO.PixelFormat.I420);
         setBufferType(MediaIO.BufferType.BYTE_ARRAY);
-        mFastYUV2RGB = new FastYUVtoRGB(context);
-        mPaint = new Paint();
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         super.surfaceCreated(holder);
-        mHolder = holder;
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         super.surfaceChanged(holder, format, width, height);
 //        mHolder = holder;
+        Log.i(TAG, "surfaceChanged: w:" + width + ",h:" + height);
     }
 
     @Override
     public void consumeByteArrayFrame(byte[] data, int pixelFormat, int width, int height, int rotation, long ts) {
-//        super.consumeByteArrayFrame(data, pixelFormat, width, height, rotation, ts);
-        // TODO: 2020/4/12 自定义渲染
-        for (int i = 0; i < 16; i++) {
-            Log.i(TAG, "consumeByteArrayFrame: " + i + ":" + data[i]);
-        }
-        Log.i(TAG, "consumeByteArrayFrame: ");
-        Canvas canvas = mHolder.lockCanvas(null);
-        if (canvas != null) {
-            Rect src = new Rect(0, 0, getWidth(), getHeight());
-            Rect dest = new Rect(0, 0, width, height);
-            canvas.drawBitmap(mFastYUV2RGB.convertYUVtoRGB(data, width, height), src, dest, mPaint);
-            mHolder.unlockCanvasAndPost(canvas);
-        }
+        int scale = 16;
+        int bit = 32;
+        byte[] out = mosaicI420(data, width, height, scale, bit);
+        super.consumeByteArrayFrame(out, pixelFormat, width, height, rotation, ts);
     }
+
+    /**
+     * 将视频帧转化为马赛克模式
+     *
+     * @param data
+     * @param width
+     * @param height
+     * @param scale
+     * @param bit    y分量的层级，默认是64，也就是把原始的256个值分成多少份
+     * @return
+     */
+    public static native byte[] mosaicI420(byte[] data, int width, int height, int scale, int bit);
 
 
     class FastYUVtoRGB {
@@ -94,5 +90,11 @@ public class MosaicVideoSink extends AgoraSurfaceView {
             out.copyTo(bmpout);
             return bmpout;
         }
+    }
+
+    class VideoFrameData {
+        byte[] data;
+        int width;
+        int height;
     }
 }
