@@ -1,6 +1,12 @@
 package cn.bearever.likemosaic;
 
 import android.content.Context;
+import android.text.TextUtils;
+import android.widget.TextView;
+
+import java.util.UUID;
+
+import cn.bearever.mingbase.app.store.SpManager;
 
 /**
  * 获取UID
@@ -15,7 +21,11 @@ public class UidUtil {
      * @return
      */
     public static String getUid(Context context) {
-        // TODO: 2020/4/12  获取设备id，需要使用SP临时存储
-        return "nihaosao";
+        String uid = SpManager.getInstance().getString(Constant.KEY_UID);
+        if (TextUtils.isEmpty(uid)) {
+            uid = UUID.randomUUID().toString();
+            SpManager.getInstance().putString(Constant.KEY_UID, uid);
+        }
+        return uid;
     }
 }

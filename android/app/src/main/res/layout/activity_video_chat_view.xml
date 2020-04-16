@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/img_home"
-    tools:context=".VideoChatViewActivity">
+    tools:context=".call.VideoCallActivity">
 
     <FrameLayout
         android:id="@+id/local_video_view_container"
@@ -20,8 +20,8 @@
         app:layout_constraintRight_toRightOf="parent">
 
         <ImageView
-            android:layout_width="@dimen/local_back_icon_size"
-            android:layout_height="@dimen/local_back_icon_size"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_gravity="center"
             android:scaleType="centerCrop"
             app:srcCompat="@drawable/icon_agora_large" />

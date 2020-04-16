@@ -14,9 +14,9 @@ public abstract class BasePresenterIml<V extends IBaseView, M extends IBaseModel
     protected M mModel;
 
     public BasePresenterIml(V view, Context context) {
-        initModel();
         this.mViewRef = new WeakReference<>(view);
         this.mContextRef = new WeakReference<>(context);
+        initModel();
     }
 
     /**

@@ -43,9 +43,11 @@ dependencies {
     // DO NOT CHANGE, CI may needs it when packaging
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.core:core-ktx:1.0.2'
-    implementation 'io.agora.rtc:full-sdk:3.0.0'
     implementation project(path: ':mingbase')
     implementation 'com.github.ismaeltoe:flowlayout:1.0'
+
+    implementation 'io.agora.rtc:full-sdk:3.0.0'
+    implementation 'io.agora.rtm:rtm-sdk:1.1.0'
 }
 repositories {
     mavenCentral()

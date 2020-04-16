@@ -19,9 +19,11 @@ public abstract class BaseActivity<P extends IBasePresenter> extends AppCompatAc
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(getLayoutId());
+        initData(savedInstanceState);
         initView();
         initPresenter();
     }
+
 
     /**
      * 获取布局的资源id
@@ -29,6 +31,15 @@ public abstract class BaseActivity<P extends IBasePresenter> extends AppCompatAc
      * @return 布局的资源id
      */
     public abstract int getLayoutId();
+
+    /**
+     * 初始化数据
+     *
+     * @param savedInstanceState
+     */
+    public void initData(Bundle savedInstanceState) {
+
+    }
 
     /**
      * 初始化UI

@@ -33,5 +33,5 @@
 **/android/app/.classpath
 **/android/app/.project
 **/android/app/.settings/
-
+**/.externalNativeBuild
 

@@ -2,9 +2,26 @@ package cn.bearever.likemosaic.home;
 
 import android.content.Context;
 
+import java.io.IOException;
+
+import cn.bearever.likemosaic.Constant;
+import cn.bearever.likemosaic.MosaiApplication;
 import cn.bearever.likemosaic.bean.BaseResultBean;
 import cn.bearever.likemosaic.bean.MatchResultBean;
 import cn.bearever.mingbase.BaseCallback;
+import cn.bearever.mingbase.chain.AsyncChain;
+import cn.bearever.mingbase.chain.core.AsyncChainRunnable;
+import cn.bearever.mingbase.chain.core.AsyncChainTask;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.http.Field;
+import retrofit2.http.FormUrlEncoded;
+import retrofit2.http.GET;
+import retrofit2.http.POST;
+import retrofit2.http.Query;
 
 /**
  * @author luoming
@@ -12,27 +29,89 @@ import cn.bearever.mingbase.BaseCallback;
  */
 public class HomeModel implements HomeContact.Model {
     private Context context;
+    private Retrofit mRetrofit;
+    private HomeService mService;
 
     public HomeModel(Context context) {
         this.context = context;
+        mRetrofit = new Retrofit.Builder()
+                .baseUrl(Constant.APP_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+        mService = mRetrofit.create(HomeService.class);
     }
 
     @Override
-    public void postMatch(String uid, BaseCallback callback) {
-        //todo 请求匹配接口
-        if (callback != null) {
-            callback.suc(new BaseResultBean());
-        }
+    public void postMatch(String uid, final BaseCallback callback) {
+        Call<BaseResultBean> result = mService.postMatch(uid);
+        result.enqueue(new Callback<BaseResultBean>() {
+            @Override
+            public void onResponse(Call<BaseResultBean> call, Response<BaseResultBean> response) {
+                if (response.body() != null && callback != null) {
+                    if (response.body().code == BaseResultBean.CODE_SUCCEED) {
+                        callback.suc(response.body());
+                    } else {
+                        callback.fail(response.body().msg, response.body().code);
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<BaseResultBean> call, Throwable t) {
+                if (callback != null) {
+                    callback.fail(t.getMessage(), BaseResultBean.CODE_FAILED);
+                }
+            }
+        });
     }
 
     @Override
-    public void getMatchState(String uid, BaseCallback<MatchResultBean> callback) {
-        //todo 获取匹配状态接口，这里需要使用轮询
-        if (callback != null) {
-            MatchResultBean bean = new MatchResultBean();
-            bean.channel = "bearever";
-            bean.token = "bearever" + System.currentTimeMillis();
-            callback.suc(bean);
-        }
+    public void getMatchState(final String uid, final BaseCallback<MatchResultBean> callback) {
+        AsyncChain.withWork(new AsyncChainRunnable<Void, MatchResultBean>() {
+            @Override
+            public void run(AsyncChainTask<Void, MatchResultBean> task) throws Exception {
+                MatchResultBean matchResultBean = null;
+
+                for (int i = 0; i < 25; i++) {
+                    Thread.sleep(1000);
+                    matchResultBean = getMatchStateNet(uid, callback);
+                    if (matchResultBean != null && matchResultBean.code == BaseResultBean.CODE_SUCCEED) {
+                        break;
+                    }
+                }
+                if (matchResultBean == null || matchResultBean.code == BaseResultBean.CODE_FAILED) {
+                    matchResultBean = new MatchResultBean();
+                    matchResultBean.code = BaseResultBean.CODE_FAILED;
+                    matchResultBean.msg = "匹配失败，请稍后重试";
+                }
+
+                task.onNext(matchResultBean);
+            }
+        }).withMain(new AsyncChainRunnable<MatchResultBean, Void>() {
+            @Override
+            public void run(AsyncChainTask<MatchResultBean, Void> task) throws Exception {
+                if (callback != null) {
+                    if (task.getLastResult().code == BaseResultBean.CODE_SUCCEED) {
+                        callback.suc(task.getLastResult());
+                    } else {
+                        callback.fail(task.getLastResult().msg, task.getLastResult().code);
+                    }
+                }
+            }
+        }).go(context);
+    }
+
+    private MatchResultBean getMatchStateNet(String uid, final BaseCallback<MatchResultBean> callback) throws IOException {
+        Call<MatchResultBean> matchResultBeanCall = mService.getMatchState(uid);
+        Response<MatchResultBean> response = matchResultBeanCall.execute();
+        return response.body();
+    }
+
+    public interface HomeService {
+        @GET("match/post")
+        Call<BaseResultBean> postMatch(@Query("uid") String uid);
+
+        @GET("match/get")
+        Call<MatchResultBean> getMatchState(@Query("uid") String uid);
     }
 }

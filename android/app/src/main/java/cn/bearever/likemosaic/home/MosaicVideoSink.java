@@ -38,7 +38,6 @@ public class MosaicVideoSink extends AgoraSurfaceView {
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         super.surfaceChanged(holder, format, width, height);
-//        mHolder = holder;
         Log.i(TAG, "surfaceChanged: w:" + width + ",h:" + height);
     }
 
@@ -61,40 +60,4 @@ public class MosaicVideoSink extends AgoraSurfaceView {
      * @return
      */
     public static native byte[] mosaicI420(byte[] data, int width, int height, int scale, int bit);
-
-
-    class FastYUVtoRGB {
-        private RenderScript rs;
-        private ScriptIntrinsicYuvToRGB yuvToRgbIntrinsic;
-        private Type.Builder yuvType, rgbaType;
-        private Allocation in, out;
-
-        public FastYUVtoRGB(Context context) {
-            rs = RenderScript.create(context);
-            yuvToRgbIntrinsic = ScriptIntrinsicYuvToRGB.create(rs, Element.U8_4(rs));
-        }
-
-
-        public Bitmap convertYUVtoRGB(byte[] yuvData, int width, int height) {
-            if (yuvType == null) {
-                yuvType = new Type.Builder(rs, Element.U8(rs)).setX(yuvData.length);
-                in = Allocation.createTyped(rs, yuvType.create(), Allocation.USAGE_SCRIPT);
-
-                rgbaType = new Type.Builder(rs, Element.RGBA_8888(rs)).setX(width).setY(height);
-                out = Allocation.createTyped(rs, rgbaType.create(), Allocation.USAGE_SCRIPT);
-            }
-            in.copyFrom(yuvData);
-            yuvToRgbIntrinsic.setInput(in);
-            yuvToRgbIntrinsic.forEach(out);
-            Bitmap bmpout = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-            out.copyTo(bmpout);
-            return bmpout;
-        }
-    }
-
-    class VideoFrameData {
-        byte[] data;
-        int width;
-        int height;
-    }
 }
