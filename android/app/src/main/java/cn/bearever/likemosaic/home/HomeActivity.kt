@@ -46,7 +46,7 @@ class HomeActivity : BaseActivity<HomePresenter>(), HomeContact.View {
                     mPresenter.requestMatch()
                 }
                 .onDenied { permissions ->
-                    ToastUtil.show(applicationContext, "缺少" + permissions[0].message)
+                    ToastUtil.show("缺少" + permissions[0].message)
 
                 }
     }
@@ -61,7 +61,7 @@ class HomeActivity : BaseActivity<HomePresenter>(), HomeContact.View {
 
     override fun matchFailed(msg: String) {
         //todo 匹配失败
-        ToastUtil.show(this, msg)
+        ToastUtil.show(msg)
     }
 
     override fun matchSucceed(matchResultBean: MatchResultBean) {

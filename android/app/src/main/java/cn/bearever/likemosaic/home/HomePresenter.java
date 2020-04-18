@@ -34,7 +34,7 @@ public class HomePresenter extends BasePresenterIml<HomeContact.View, HomeContac
             @Override
             public void fail(String msg, int code) {
                 super.fail(msg, code);
-                ToastUtil.show(getContext(), msg);
+                ToastUtil.show(msg);
             }
         });
     }

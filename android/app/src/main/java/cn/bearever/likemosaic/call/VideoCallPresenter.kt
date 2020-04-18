@@ -4,8 +4,15 @@ import android.content.Context
 import android.util.Log
 import cn.bearever.likemosaic.R
 import cn.bearever.likemosaic.UidUtil
+import cn.bearever.likemosaic.bean.MessageBean
 import cn.bearever.likemosaic.bean.TopicBean
+import cn.bearever.likemosaic.bean.TopicListResultBean
+import cn.bearever.mingbase.BaseCallback
 import cn.bearever.mingbase.app.mvp.BasePresenterIml
+import cn.bearever.mingbase.app.util.ToastUtil
+import cn.bearever.mingbase.chain.AsyncChain
+import cn.bearever.mingbase.chain.core.AsyncChainRunnable
+import cn.bearever.mingbase.chain.core.AsyncChainTask
 import io.agora.rtc.IRtcEngineEventHandler
 import io.agora.rtc.IRtcEngineEventHandlerEx
 import io.agora.rtc.RtcEngine
@@ -24,6 +31,7 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
     }
 
     private var mRtcEngine: RtcEngine? = null
+    private var mChannel = ""
 
     init {
         initEngineAndJoinChannel()
@@ -34,24 +42,6 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
         setupVideoConfig()
     }
 
-    /**
-     * Event handler registered into RTC engine for RTC callbacks.
-     * Note that UI operations needs to be in UI thread because RTC
-     * engine deals with the events in a separate thread.
-     */
-    private val mRtcEventHandler = object : IRtcEngineEventHandler() {
-        override fun onJoinChannelSuccess(channel: String, uid: Int, elapsed: Int) {
-            Log.i(TAG, "onJoinChannelSuccess: ")
-        }
-
-        override fun onFirstRemoteVideoDecoded(uid: Int, width: Int, height: Int, elapsed: Int) {
-            getView()?.onUserJoin(uid)
-        }
-
-        override fun onUserOffline(uid: Int, reason: Int) {
-            getView()?.onUserLeft()
-        }
-    }
 
     private fun initializeEngine() {
         try {
@@ -87,6 +77,19 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
 
     override fun initModel() {
         mModel = VideoCallModel(context)
+        mModel?.registerMessage { message ->
+            //接收到对方发送的消息
+            if (message?.channel != mChannel) {
+                return@registerMessage
+            }
+
+            AsyncChain.withMain(object : AsyncChainRunnable<Void, Void>() {
+                override fun run(task: AsyncChainTask<Void, Void>?) {
+                    ToastUtil.show(message.text)
+                    task?.onComplete()
+                }
+            }).go()
+        }
     }
 
     override fun setLocalVideoRenderer(sink: IVideoSink) {
@@ -97,30 +100,41 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
         mRtcEngine?.setRemoteVideoRenderer(uid, sink)
     }
 
-    override fun joinRoom(channel: String?, rtcToken: String?, rtmToken: String?) {
-        mModel?.login(rtmToken)
+    override fun joinRoom(channel: String?, rtcToken: String?, rtmToken: String?, remoteUid: String?) {
+        mChannel = channel ?: "";
+        mModel?.loginRtm(rtmToken, channel, remoteUid)
         mRtcEngine?.joinChannel(rtcToken, channel, "", UidUtil.getUid(context).hashCode())
     }
 
     override fun quitRoom() {
         mRtcEngine?.leaveChannel()
-        mModel?.logout()
+        mModel?.logoutRtm()
     }
 
     override fun muteAudio(mute: Boolean) {
         mRtcEngine?.muteLocalAudioStream(mute)
     }
 
-    override fun sendMessage(msg: String, uid: String) {
-
-    }
-
     override fun selectTopic(topicBean: TopicBean, isSelect: Boolean) {
-
+        val message = MessageBean(mChannel)
+        message.key = MessageBean.KEY_SELECT_TOPIC
+        val map = HashMap<String, Any>()
+        map["id"] = topicBean.id
+        map["selected"] = isSelect
+        message.data = map
+        message.text = "选择" + topicBean.text
+        mModel?.sendMessage(message)
     }
 
     override fun sendLike() {
 
     }
 
+    override fun refreshTopics() {
+        mModel?.getTopics(object : BaseCallback<TopicListResultBean>() {
+            override fun suc(data: TopicListResultBean) {
+                view?.refreshTags(data.list)
+            }
+        })
+    }
 }

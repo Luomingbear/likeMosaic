@@ -41,8 +41,8 @@ public class MatchGetController {
             return result;
         }
 
-        String channel = MatchManager.getInstance().getChannel(uid);
-        if (channel == null) {
+        MatchManager.MatchData matchData = MatchManager.getInstance().getChannel(uid);
+        if (matchData == null) {
             BaseResult result = new BaseResult();
             result.setCode(BaseResult.CODE_FAILED);
             result.setMsg("还没有匹配上的频道");
@@ -51,26 +51,27 @@ public class MatchGetController {
             //生成token
             RtcTokenBuilder rtcTokenBuilder = new RtcTokenBuilder();
             int timestamp = (int) (System.currentTimeMillis() / 1000 + expirationTimeInSeconds);
-            String rtcToken = rtcTokenBuilder.buildTokenWithUid(appId, appCertificate, channel, Objects.hashCode(uid),
+            String rtcToken = rtcTokenBuilder.buildTokenWithUid(appId, appCertificate, matchData.channel, Objects.hashCode(uid),
                     RtcTokenBuilder.Role.Role_Publisher, timestamp);
             RtmTokenBuilder rtmTokenBuilder = new RtmTokenBuilder();
             String rtmToken = rtmTokenBuilder.buildToken(appId, appCertificate, uid, RtmTokenBuilder.Role.Rtm_User, timestamp);
             //获取话题信息 todo 多线程同步问题
             List<TopicDao> list = null;
-            if (topicMap.get(channel) != null) {
+            if (topicMap.get(matchData.channel) != null) {
 
-                list = topicMap.get(channel);
-                topicMap.remove(channel);
+                list = topicMap.get(matchData.channel);
+                topicMap.remove(matchData.channel);
             } else {
                 list = topicService.getTopics(uid);
-                topicMap.put(channel, list);
+                topicMap.put(matchData.channel, list);
             }
 
             MatchResult result = new MatchResult();
             result.setMsg("频道获取成功");
             result.setRtcToken(rtcToken);
             result.setRtmToken(rtmToken);
-            result.setChannel(channel);
+            result.setRemoteUid(matchData.uid);
+            result.setChannel(matchData.channel);
             result.setList(list);
             return result;
         }

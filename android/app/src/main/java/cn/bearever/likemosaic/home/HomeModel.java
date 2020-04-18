@@ -29,12 +29,11 @@ import retrofit2.http.Query;
  */
 public class HomeModel implements HomeContact.Model {
     private Context context;
-    private Retrofit mRetrofit;
     private HomeService mService;
 
     public HomeModel(Context context) {
         this.context = context;
-        mRetrofit = new Retrofit.Builder()
+        Retrofit mRetrofit = new Retrofit.Builder()
                 .baseUrl(Constant.APP_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
@@ -105,6 +104,12 @@ public class HomeModel implements HomeContact.Model {
         Call<MatchResultBean> matchResultBeanCall = mService.getMatchState(uid);
         Response<MatchResultBean> response = matchResultBeanCall.execute();
         return response.body();
+    }
+
+    @Override
+    public void onDetach() {
+        mService = null;
+        context = null;
     }
 
     public interface HomeService {

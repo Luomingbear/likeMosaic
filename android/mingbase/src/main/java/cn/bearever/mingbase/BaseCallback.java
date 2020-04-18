@@ -1,5 +1,11 @@
 package cn.bearever.mingbase;
 
+import cn.bearever.mingbase.app.BaseApplication;
+import cn.bearever.mingbase.app.util.ToastUtil;
+import cn.bearever.mingbase.chain.AsyncChain;
+import cn.bearever.mingbase.chain.core.AsyncChainRunnable;
+import cn.bearever.mingbase.chain.core.AsyncChainTask;
+
 /**
  * 通用异步返回接口
  *
@@ -20,7 +26,13 @@ public abstract class BaseCallback<T> {
      * @param msg  失败说明
      * @param code 失败码
      */
-    public void fail(String msg, int code) {
-
+    public void fail(final String msg, int code) {
+        AsyncChain.withMain(new AsyncChainRunnable() {
+            @Override
+            public void run(AsyncChainTask task) throws Exception {
+                ToastUtil.show(msg);
+                task.onComplete();
+            }
+        }).go();
     }
 }

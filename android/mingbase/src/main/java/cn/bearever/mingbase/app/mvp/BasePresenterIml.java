@@ -47,6 +47,9 @@ public abstract class BasePresenterIml<V extends IBaseView, M extends IBaseModel
     public void onDetach() {
         mViewRef = null;
         mContextRef = null;
-        mModel = null;
+        if (mModel != null) {
+            mModel.onDetach();
+            mModel = null;
+        }
     }
 }

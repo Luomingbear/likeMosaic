@@ -16,6 +16,10 @@ public class MatchResultBean extends BaseResultBean {
      * 视频聊天的token
      */
     public String rtcToken;
+    /**
+     * 匹配对方的uid，用于进行点对点通信
+     */
+    public String remoteUid;
     public String channel;
     public ArrayList<TopicBean> list;
 }

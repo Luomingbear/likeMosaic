@@ -22,6 +22,10 @@ public class MatchResult extends BaseResult {
      * 房间号
      */
     private String channel = "";
+    /**
+     * 聊天对方的uid
+     */
+    private String remoteUid = "";
 
     /**
      * 获取信息
@@ -53,6 +57,14 @@ public class MatchResult extends BaseResult {
 
     public void setChannel(String channel) {
         this.channel = channel;
+    }
+
+    public String getRemoteUid() {
+        return remoteUid;
+    }
+
+    public void setRemoteUid(String remoteUid) {
+        this.remoteUid = remoteUid;
     }
 
     public List<TopicDao> getList() {

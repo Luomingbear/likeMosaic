@@ -4,6 +4,8 @@ import android.graphics.Color
 import android.graphics.drawable.AnimationDrawable
 import android.os.Bundle
 import android.view.View
+import android.view.animation.Animation
+import android.view.animation.RotateAnimation
 import android.widget.TextView
 import cn.bearever.likemosaic.Constant
 import cn.bearever.likemosaic.R
@@ -11,18 +13,18 @@ import cn.bearever.likemosaic.bean.MatchResultBean
 import cn.bearever.likemosaic.bean.TopicBean
 import cn.bearever.likemosaic.home.MosaicVideoSink
 import cn.bearever.mingbase.app.mvp.BaseActivity
+import cn.bearever.mingbase.app.util.ToastUtil
 import com.jaeger.library.StatusBarUtil
 import io.agora.rtc.RtcEngine
 import io.agora.rtc.mediaio.IVideoSink
 import kotlinx.android.synthetic.main.activity_video_chat_view.*
-import java.util.*
 
 /**
  * 视频聊天页面
  *
  * @author bear
  */
-class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.View {
+class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.View, View.OnClickListener {
 
     companion object {
         private val TAG = VideoCallActivity::class.java.simpleName
@@ -46,6 +48,10 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         if (saveInstanceState != null) {
             mMatchResultBean = saveInstanceState.getSerializable(Constant.KEY_MATCH_BEAN) as MatchResultBean?
         }
+
+        if (mMatchResultBean == null) {
+            endCall()
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -65,6 +71,33 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         btn_back.setOnClickListener {
             endCall()
         }
+        btn_refresh.setOnClickListener {
+            startRefreshAnimation()
+        }
+    }
+
+    /**
+     * 执行刷新按钮的动画
+     */
+    private fun startRefreshAnimation() {
+        btn_refresh.isEnabled = false
+        val rotateAnimation = RotateAnimation(0F, 180F, btn_refresh.width / 2F, btn_refresh.height / 2.0F)
+        rotateAnimation.duration = 300
+        rotateAnimation.setAnimationListener(object : Animation.AnimationListener {
+            override fun onAnimationRepeat(animation: Animation?) {
+
+            }
+
+            override fun onAnimationEnd(animation: Animation?) {
+                mPresenter?.refreshTopics()
+                btn_refresh.isEnabled = true
+            }
+
+            override fun onAnimationStart(animation: Animation?) {
+            }
+        })
+        btn_refresh.clearAnimation()
+        btn_refresh.startAnimation(rotateAnimation)
     }
 
     override fun initPresenter() {
@@ -99,7 +132,19 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         textView.setBackgroundResource(R.drawable.drawable_tag)
         textView.setTextColor(Color.WHITE)
         textView.setTag(topic.id)
+        textView.setOnClickListener(this)
         return textView
+    }
+
+    override fun onClick(v: View?) {
+        val id = v?.tag as Int
+        for (topic in mMatchResultBean?.list!!) {
+            if (topic.id == id) {
+                val selected = v?.isSelected
+                v.isSelected = !selected
+                mPresenter?.selectTopic(topic, !selected)
+            }
+        }
     }
 
     override fun refreshLike(likeCount: Int) {
@@ -108,7 +153,7 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
 
     override fun onUserLeft() {
         runOnUiThread {
-            removeRemoteVideo()
+            ToastUtil.show("对方退出聊天")
             endCall()
         }
     }
@@ -149,7 +194,7 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
     }
 
     private fun joinChannel() {
-        mPresenter?.joinRoom(mMatchResultBean?.channel, mMatchResultBean?.rtcToken, mMatchResultBean?.rtmToken)
+        mPresenter?.joinRoom(mMatchResultBean?.channel, mMatchResultBean?.rtcToken, mMatchResultBean?.rtmToken, mMatchResultBean?.remoteUid)
     }
 
     override fun onDestroy() {
@@ -199,4 +244,5 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         //屏蔽返回操作，仅允许通过点击返回按钮退出房间
 //        super.onBackPressed()
     }
+
 }

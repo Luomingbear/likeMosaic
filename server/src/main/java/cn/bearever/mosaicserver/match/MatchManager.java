@@ -13,7 +13,7 @@ public class MatchManager {
     /**
      * 已经匹配的记录
      */
-    private Map<String, String> mChannelMap;
+    private Map<String, MatchData> mChannelMap;
     private static final String PRE_KEY = "luoming";
     private String mTime;
     private long count = 0;
@@ -70,8 +70,10 @@ public class MatchManager {
             String channel = mBase64.encodeToString(mTime.getBytes());
 
             synchronized (LOCK_CHANNEL) {
-                mChannelMap.put(entry1.getKey(), channel);
-                mChannelMap.put(entry2.getKey(), channel);
+                MatchData matchDataA = new MatchData(entry2.getKey(), channel);
+                MatchData matchDataB = new MatchData(entry1.getKey(), channel);
+                mChannelMap.put(entry1.getKey(), matchDataA);
+                mChannelMap.put(entry2.getKey(), matchDataB);
             }
             entries.remove(entry1);
             entries.remove(entry2);
@@ -80,9 +82,7 @@ public class MatchManager {
 
     public void remove(String uid) {
         synchronized (LOCK_UID) {
-            MatchData data = new MatchData();
-            data.uid = uid;
-            mPostUidMap.remove(data);
+            mPostUidMap.remove(uid);
         }
     }
 
@@ -92,15 +92,20 @@ public class MatchManager {
      * @param uid 用户id
      * @return 频道号
      */
-    public String getChannel(String uid) {
+    public MatchData getChannel(String uid) {
         synchronized (LOCK_CHANNEL) {
             return mChannelMap.remove(uid);
         }
     }
 
-    private static class MatchData {
-        private String uid;
-        private String channel;
+    public static class MatchData {
+        public String uid;
+        public String channel;
+
+        public MatchData(String uid, String channel) {
+            this.uid = uid;
+            this.channel = channel;
+        }
 
         @Override
         public boolean equals(Object obj) {

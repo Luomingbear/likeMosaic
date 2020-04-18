@@ -4,7 +4,10 @@ import android.nfc.Tag;
 
 import java.util.List;
 
+import cn.bearever.likemosaic.bean.MessageBean;
 import cn.bearever.likemosaic.bean.TopicBean;
+import cn.bearever.likemosaic.bean.TopicListResultBean;
+import cn.bearever.mingbase.BaseCallback;
 import cn.bearever.mingbase.app.mvp.IBaseModel;
 import cn.bearever.mingbase.app.mvp.IBasePresenter;
 import cn.bearever.mingbase.app.mvp.IBaseView;
@@ -47,23 +50,51 @@ public class VideoCallContact {
         /**
          * 登录
          *
-         * @param token
+         * @param rtmToken
          */
-        void login(String token);
+        void loginRtm(String rtmToken, String channel, String remoteUid);
 
         /**
          * 退出登录
          */
-        void logout();
-
+        void logoutRtm();
 
         /**
          * 发送消息
          *
-         * @param msg
-         * @param uid
+         * @param message
          */
-        void sendMessage(String msg, String uid);
+        void sendMessage(MessageBean message);
+
+        /**
+         * 发送消息
+         *
+         * @param message
+         */
+        void sendMessage(MessageBean message, String uid);
+
+        /**
+         * 获取话题列表
+         *
+         * @param callback
+         */
+        void getTopics(BaseCallback<TopicListResultBean> callback);
+
+        /**
+         * 注册消息状态变化的接口
+         *
+         * @param listener
+         */
+        void registerMessage(OnMessageChangeListener listener);
+    }
+
+    public interface OnMessageChangeListener {
+        /**
+         * 接收到消息
+         *
+         * @param message
+         */
+        void onReceive(MessageBean message);
     }
 
     public interface Presenter extends IBasePresenter {
@@ -89,12 +120,12 @@ public class VideoCallContact {
          * @param channel
          * @param rtcToken
          * @param rtmToken
+         * @param remoteUid
          */
-        void joinRoom(String channel, String rtcToken, String rtmToken);
+        void joinRoom(String channel, String rtcToken, String rtmToken, String remoteUid);
 
         /**
          * 离开房间
-         *
          */
         void quitRoom();
 
@@ -104,14 +135,6 @@ public class VideoCallContact {
          * @param mute 是否静音
          */
         void muteAudio(boolean mute);
-
-        /**
-         * 发送信息
-         *
-         * @param msg
-         * @param uid
-         */
-        void sendMessage(String msg, String uid);
 
         /**
          * 选中/取消选中 话题
@@ -125,5 +148,10 @@ public class VideoCallContact {
          * 发送喜欢信息，即点击屏幕
          */
         void sendLike();
+
+        /**
+         * 刷新话题区
+         */
+        void refreshTopics();
     }
 }
