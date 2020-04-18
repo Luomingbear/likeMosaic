@@ -66,13 +66,14 @@ class MainActivity : BaseActivity<HomePresenter>(), HomeContact.View {
 
     override fun matchSucceed(matchResultBean: MatchResultBean) {
         //todo 匹配成功，进入聊天
-        goVideoChat(matchResultBean.channel)
+        goVideoChat(matchResultBean)
     }
 
-    private fun goVideoChat(channel: String) {
+    private fun goVideoChat(matchResultBean: MatchResultBean) {
         intent = Intent()
         intent.setClass(this, VideoCallActivity::class.java)
-        intent.putExtra(Constant.KEY_CHANNEL, channel)
+        intent.putExtra(Constant.KEY_CHANNEL, matchResultBean.channel)
+        intent.putExtra(Constant.KEY_TOKEN, matchResultBean.token)
         val list = ArrayList<TopicBean>()
         for (i in 0..8) {
             val bean = TopicBean(id = i)
