@@ -62,12 +62,12 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
 
                 override fun onFirstRemoteVideoDecoded(uid: Int, width: Int, height: Int, elapsed: Int) {
                     getView()?.onUserJoin(uid)
-                    Log.i(TAG,"onFirstRemoteVideoDecoded")
+                    Log.i(TAG, "onFirstRemoteVideoDecoded")
                 }
 
                 override fun onUserOffline(uid: Int, reason: Int) {
                     getView()?.onUserLeft()
-                    Log.i(TAG,"onUserOffline")
+                    Log.i(TAG, "onUserOffline")
                 }
             })
         } catch (e: Exception) {
@@ -97,14 +97,16 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
         mRtcEngine?.setRemoteVideoRenderer(uid, sink)
     }
 
-    override fun joinRoom(channel: String, token: String) {
-        mModel?.login(token)
-        mRtcEngine?.joinChannel(token, channel, "", UidUtil.getUid(context).hashCode())
+    override fun joinRoom(channel: String?, rtcToken: String?, rtmToken: String?) {
+        mModel?.login(rtmToken)
+        mRtcEngine?.joinChannel(rtcToken, channel, "", UidUtil.getUid(context).hashCode())
     }
 
-    override fun quitRoom(channel: String) {
+    override fun quitRoom() {
         mRtcEngine?.leaveChannel()
+        mModel?.logout()
     }
+
     override fun muteAudio(mute: Boolean) {
         mRtcEngine?.muteLocalAudioStream(mute)
     }
@@ -112,9 +114,11 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
     override fun sendMessage(msg: String, uid: String) {
 
     }
+
     override fun selectTopic(topicBean: TopicBean, isSelect: Boolean) {
 
     }
+
     override fun sendLike() {
 
     }

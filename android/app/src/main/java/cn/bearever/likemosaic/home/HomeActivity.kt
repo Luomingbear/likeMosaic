@@ -6,13 +6,11 @@ import cn.bearever.likemosaic.Constant
 import cn.bearever.likemosaic.R
 import cn.bearever.likemosaic.call.VideoCallActivity
 import cn.bearever.likemosaic.bean.MatchResultBean
-import cn.bearever.likemosaic.bean.TopicBean
 import cn.bearever.mingbase.app.mvp.BaseActivity
 import cn.bearever.mingbase.app.permission.AsyncPermission
 import cn.bearever.mingbase.app.util.ToastUtil
 import com.jaeger.library.StatusBarUtil
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlin.collections.ArrayList
 
 
 /**
@@ -74,9 +72,7 @@ class HomeActivity : BaseActivity<HomePresenter>(), HomeContact.View {
     private fun goVideoChat(matchResultBean: MatchResultBean) {
         intent = Intent()
         intent.setClass(this, VideoCallActivity::class.java)
-        intent.putExtra(Constant.KEY_CHANNEL, matchResultBean.channel)
-        intent.putExtra(Constant.KEY_TOKEN, matchResultBean.token)
-        intent.putExtra(Constant.KEY_TOPIC_LIST, matchResultBean.list)
+        intent.putExtra(Constant.KEY_MATCH_BEAN, matchResultBean)
         startActivity(intent)
     }
 

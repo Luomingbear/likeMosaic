@@ -87,15 +87,16 @@ public class VideoCallContact {
          * 加入房间
          *
          * @param channel
+         * @param rtcToken
+         * @param rtmToken
          */
-        void joinRoom(String channel, String token);
+        void joinRoom(String channel, String rtcToken, String rtmToken);
 
         /**
          * 离开房间
          *
-         * @param channel
          */
-        void quitRoom(String channel);
+        void quitRoom();
 
         /**
          * 静音

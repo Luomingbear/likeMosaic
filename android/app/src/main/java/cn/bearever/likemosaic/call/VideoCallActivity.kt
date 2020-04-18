@@ -3,14 +3,11 @@ package cn.bearever.likemosaic.call
 import android.graphics.Color
 import android.graphics.drawable.AnimationDrawable
 import android.os.Bundle
-import android.view.SurfaceView
 import android.view.View
-import android.widget.FrameLayout
-import android.widget.ImageView
-import android.widget.RelativeLayout
 import android.widget.TextView
 import cn.bearever.likemosaic.Constant
 import cn.bearever.likemosaic.R
+import cn.bearever.likemosaic.bean.MatchResultBean
 import cn.bearever.likemosaic.bean.TopicBean
 import cn.bearever.likemosaic.home.MosaicVideoSink
 import cn.bearever.mingbase.app.mvp.BaseActivity
@@ -33,12 +30,10 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
 
     private var mMuted = false
     var mCallEnd = false
-    private var mChannel = ""
-    private var mToken = ""
+    private var mMatchResultBean: MatchResultBean? = null
     private var mRemoteView: View? = null
     private var mLocalView: View? = null
 
-    private var mTopicList: ArrayList<TopicBean>? = null
     override fun getLayoutId(): Int {
         return R.layout.activity_video_chat_view
     }
@@ -46,21 +41,17 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
     override fun initData(saveInstanceState: Bundle?) {
         if (intent != null) {
             val intent = intent
-            mChannel = intent.getStringExtra(Constant.KEY_CHANNEL)
-            mToken = intent.getStringExtra(Constant.KEY_TOKEN)
-            mTopicList = intent.getSerializableExtra(Constant.KEY_TOPIC_LIST) as ArrayList<TopicBean>
+            mMatchResultBean = intent.getSerializableExtra(Constant.KEY_MATCH_BEAN) as MatchResultBean?
         }
         if (saveInstanceState != null) {
-            mChannel = saveInstanceState.getString(Constant.KEY_CHANNEL)
-            mToken = saveInstanceState.getString(Constant.KEY_TOKEN)
-            mTopicList = saveInstanceState.getSerializable(Constant.KEY_TOPIC_LIST) as ArrayList<TopicBean>
+            mMatchResultBean = saveInstanceState.getSerializable(Constant.KEY_MATCH_BEAN) as MatchResultBean?
         }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        outState.putString(Constant.KEY_TOKEN, mToken)
-        outState.putString(Constant.KEY_CHANNEL, mChannel)
-        outState.putSerializable(Constant.KEY_TOPIC_LIST, mTopicList)
+        mMatchResultBean.let {
+            outState.putSerializable(Constant.KEY_MATCH_BEAN, it)
+        }
         super.onSaveInstanceState(outState)
     }
 
@@ -68,8 +59,8 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         StatusBarUtil.setTransparentForImageView(this, btn_mute)
         iv_like.clearAnimation()
         (iv_like.getDrawable() as AnimationDrawable).start()
-        if (mTopicList != null) {
-            refreshTags(mTopicList!!)
+        if (mMatchResultBean?.list != null) {
+            refreshTags(mMatchResultBean?.list)
         }
         btn_back.setOnClickListener {
             endCall()
@@ -81,7 +72,7 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         startCall()
     }
 
-    override fun refreshTags(topicList: List<TopicBean>) {
+    override fun refreshTags(topicList: List<TopicBean>?) {
         for (i in (fl_tag.childCount - 1) downTo 0) {
             val child = fl_tag.getChildAt(i)
             if (child.id == R.id.btn_refresh || child.isSelected) {
@@ -90,9 +81,11 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
 
             fl_tag.removeView(child)
         }
-        for (topic in topicList) {
-            val view = createTopicView(topic)
-            fl_tag.addView(view)
+        if (topicList != null) {
+            for (topic in topicList) {
+                val view = createTopicView(topic)
+                fl_tag.addView(view)
+            }
         }
     }
 
@@ -125,11 +118,11 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
     }
 
     private fun setupRemoteVideo(uid: Int) {
-        val count = remote_video_view_container!!.childCount
+        val count = remote_video_view_container?.childCount ?: 0
         var view: View? = null
         for (i in 0 until count) {
-            val v = remote_video_view_container!!.getChildAt(i)
-            if (v.tag is Int && v.tag as Int == uid) {
+            val v = remote_video_view_container?.getChildAt(i)
+            if (v?.tag is Int && v.tag as Int == uid) {
                 view = v
             }
         }
@@ -137,26 +130,26 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
             return
         }
         mRemoteView = MosaicVideoSink(this)
-        remote_video_view_container!!.addView(mRemoteView)
-        mPresenter?.setRemoteVideoRenderer(uid, (mRemoteView as IVideoSink?)!!)
+        remote_video_view_container?.addView(mRemoteView)
+        mPresenter?.setRemoteVideoRenderer(uid, mRemoteView as IVideoSink)
         mRemoteView?.setTag(uid)
     }
 
     private fun removeRemoteVideo() {
         if (mRemoteView != null) {
-            remote_video_view_container!!.removeView(mRemoteView)
+            remote_video_view_container?.removeView(mRemoteView)
         }
         mRemoteView = null
     }
 
     private fun setupLocalVideo() {
         mLocalView = MosaicVideoSink(this)
-        local_video_view_container!!.addView(mLocalView)
-        mPresenter!!.setLocalVideoRenderer((mLocalView as IVideoSink?)!!)
+        local_video_view_container?.addView(mLocalView)
+        mPresenter?.setLocalVideoRenderer(mLocalView as IVideoSink)
     }
 
     private fun joinChannel() {
-        mPresenter!!.joinRoom(mChannel, mToken)
+        mPresenter?.joinRoom(mMatchResultBean?.channel, mMatchResultBean?.rtcToken, mMatchResultBean?.rtmToken)
     }
 
     override fun onDestroy() {
@@ -168,15 +161,15 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
     }
 
     private fun leaveChannel() {
-        mPresenter?.quitRoom(mChannel)
+        mPresenter?.quitRoom()
         finish()
     }
 
     fun onLocalAudioMuteClicked(view: View?) {
         mMuted = !mMuted
-        mPresenter!!.muteAudio(mMuted)
+        mPresenter?.muteAudio(mMuted)
         val res = if (mMuted) R.drawable.btn_mute else R.drawable.btn_unmute
-        btn_mute!!.setImageResource(res)
+        btn_mute?.setImageResource(res)
     }
 
     private fun startCall() {
@@ -192,14 +185,14 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
 
     private fun removeLocalVideo() {
         if (mLocalView != null) {
-            local_video_view_container!!.removeView(mLocalView)
+            local_video_view_container?.removeView(mLocalView)
         }
         mLocalView = null
     }
 
     private fun showButtons(show: Boolean) {
         val visibility = if (show) View.VISIBLE else View.GONE
-        btn_mute!!.visibility = visibility
+        btn_mute?.visibility = visibility
     }
 
     override fun onBackPressed() {
