@@ -10,6 +10,7 @@ import cn.bearever.likemosaic.bean.TopicBean
 import cn.bearever.mingbase.app.mvp.BaseActivity
 import cn.bearever.mingbase.app.permission.AsyncPermission
 import cn.bearever.mingbase.app.util.ToastUtil
+import com.jaeger.library.StatusBarUtil
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlin.collections.ArrayList
 
@@ -20,7 +21,7 @@ import kotlin.collections.ArrayList
  * @author luoming
  * @date 2020/4/11
  */
-class MainActivity : BaseActivity<HomePresenter>(), HomeContact.View {
+class HomeActivity : BaseActivity<HomePresenter>(), HomeContact.View {
 
     override fun getLayoutId(): Int {
         return R.layout.activity_main
@@ -31,6 +32,7 @@ class MainActivity : BaseActivity<HomePresenter>(), HomeContact.View {
     }
 
     override fun initView() {
+        StatusBarUtil.setTransparent(this)
         btn_match.setOnClickListener {
             requestPermission()
         }
@@ -74,12 +76,7 @@ class MainActivity : BaseActivity<HomePresenter>(), HomeContact.View {
         intent.setClass(this, VideoCallActivity::class.java)
         intent.putExtra(Constant.KEY_CHANNEL, matchResultBean.channel)
         intent.putExtra(Constant.KEY_TOKEN, matchResultBean.token)
-        val list = ArrayList<TopicBean>()
-        for (i in 0..8) {
-            val bean = TopicBean(id = i)
-            list.add(bean)
-        }
-        intent.putExtra(Constant.KEY_TOPIC_LIST, list)
+        intent.putExtra(Constant.KEY_TOPIC_LIST, matchResultBean.list)
         startActivity(intent)
     }
 

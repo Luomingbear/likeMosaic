@@ -37,7 +37,7 @@ public abstract class BaseActivity<P extends IBasePresenter> extends AppCompatAc
      *
      * @param savedInstanceState
      */
-    public void initData(Bundle savedInstanceState) {
+    public void initData(@Nullable Bundle savedInstanceState) {
 
     }
 

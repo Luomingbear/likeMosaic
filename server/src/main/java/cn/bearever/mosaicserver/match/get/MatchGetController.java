@@ -6,6 +6,7 @@ import cn.bearever.mosaicserver.topic.TopicDao;
 import cn.bearever.mosaicserver.topic.TopicRepository;
 import cn.bearever.mosaicserver.topic.TopicService;
 import io.agora.media.RtcTokenBuilder;
+import io.agora.media.RtmTokenBuilder;
 import org.hibernate.validator.constraints.URL;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
@@ -48,13 +49,16 @@ public class MatchGetController {
             return result;
         } else {
             //生成token
-            RtcTokenBuilder tokenBuilder = new RtcTokenBuilder();
+            RtcTokenBuilder rtcTokenBuilder = new RtcTokenBuilder();
             int timestamp = (int) (System.currentTimeMillis() / 1000 + expirationTimeInSeconds);
-            String token = tokenBuilder.buildTokenWithUid(appId, appCertificate, channel, Objects.hashCode(uid),
+            String rtcToken = rtcTokenBuilder.buildTokenWithUid(appId, appCertificate, channel, Objects.hashCode(uid),
                     RtcTokenBuilder.Role.Role_Publisher, timestamp);
+            RtmTokenBuilder rtmTokenBuilder = new RtmTokenBuilder();
+            String rtmToken = rtmTokenBuilder.buildToken(appId, appCertificate, uid, RtmTokenBuilder.Role.Rtm_User, timestamp);
             //获取话题信息 todo 多线程同步问题
             List<TopicDao> list = null;
             if (topicMap.get(channel) != null) {
+
                 list = topicMap.get(channel);
                 topicMap.remove(channel);
             } else {
@@ -64,7 +68,8 @@ public class MatchGetController {
 
             MatchResult result = new MatchResult();
             result.setMsg("频道获取成功");
-            result.setToken(token);
+            result.setRtcToken(rtcToken);
+            result.setRtmToken(rtmToken);
             result.setChannel(channel);
             result.setList(list);
             return result;

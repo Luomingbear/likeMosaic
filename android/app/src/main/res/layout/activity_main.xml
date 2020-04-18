@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/img_home"
     android:orientation="vertical"
-    tools:context=".home.MainActivity">
+    tools:context=".home.HomeActivity">
 
     <FrameLayout
         android:id="@+id/fl_remote_container"

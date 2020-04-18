@@ -1,5 +1,6 @@
 package cn.bearever.likemosaic.bean;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -9,5 +10,5 @@ import java.util.List;
 public class MatchResultBean extends BaseResultBean {
     public String token;
     public String channel;
-    public List<TopicBean> list;
+    public ArrayList<TopicBean> list;
 }

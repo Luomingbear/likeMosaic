@@ -11,9 +11,13 @@ import java.util.List;
  */
 public class MatchResult extends BaseResult {
     /**
-     * token
+     * 实时消息的token
      */
-    private String token = "";
+    private String rtmToken = "";
+    /**
+     * 视频聊天的token
+     */
+    private String rtcToken = "";
     /**
      * 房间号
      */
@@ -27,17 +31,20 @@ public class MatchResult extends BaseResult {
     public MatchResult() {
     }
 
-    public MatchResult(String token, String channel) {
-        this.token = token;
-        this.channel = channel;
+    public String getRtmToken() {
+        return rtmToken;
     }
 
-    public String getToken() {
-        return token;
+    public void setRtmToken(String rtmToken) {
+        this.rtmToken = rtmToken;
     }
 
-    public void setToken(String token) {
-        this.token = token;
+    public String getRtcToken() {
+        return rtcToken;
+    }
+
+    public void setRtcToken(String rtcToken) {
+        this.rtcToken = rtcToken;
     }
 
     public String getChannel() {

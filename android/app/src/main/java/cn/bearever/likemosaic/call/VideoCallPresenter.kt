@@ -90,15 +90,15 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
     }
 
     override fun setLocalVideoRenderer(sink: IVideoSink) {
-        mRtcEngine!!.setLocalVideoRenderer(sink)
+        mRtcEngine?.setLocalVideoRenderer(sink)
     }
 
     override fun setRemoteVideoRenderer(uid: Int, sink: IVideoSink) {
-        mRtcEngine!!.setRemoteVideoRenderer(uid, sink)
+        mRtcEngine?.setRemoteVideoRenderer(uid, sink)
     }
 
     override fun joinRoom(channel: String, token: String) {
-//        mModel!!.login(token)
+        mModel?.login(token)
         mRtcEngine?.joinChannel(token, channel, "", UidUtil.getUid(context).hashCode())
     }
 
@@ -106,7 +106,7 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
         mRtcEngine?.leaveChannel()
     }
     override fun muteAudio(mute: Boolean) {
-        mRtcEngine!!.muteLocalAudioStream(mute)
+        mRtcEngine?.muteLocalAudioStream(mute)
     }
 
     override fun sendMessage(msg: String, uid: String) {

@@ -10,4 +10,5 @@
     <!-- Leave this value empty if Security keys/Token is not enabled for your project -->
     <string name="agora_access_token"></string>
     <string name="start_match">开始随机匹配</string>
+    <string name="refresh">刷新</string>
 </resources>

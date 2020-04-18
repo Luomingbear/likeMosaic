@@ -10,7 +10,7 @@
         android:roundIcon="@drawable/icon_launcher"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".home.MainActivity">
+        <activity android:name=".home.HomeActivity" android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -19,7 +19,7 @@
                 <action android:name="android.intent.action.VIEW" />
             </intent-filter>
         </activity>
-        <activity android:name=".call.VideoCallActivity" />
+        <activity android:name=".call.VideoCallActivity" android:screenOrientation="portrait" />
     </application>
 
     <uses-permission android:name="android.permission.RECORD_AUDIO" />

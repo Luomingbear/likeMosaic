@@ -7,5 +7,11 @@
 
     <!-- buttons -->
     <dimen name="call_button_size">60dp</dimen>
-    <dimen name="other_button_size">54dp</dimen>
+    <dimen name="other_button_size">30dp</dimen>
+
+    <!--    tag-->
+    <dimen name="tag_padding_left">16dp</dimen>
+    <dimen name="tag_padding_top">4dp</dimen>
+    <dimen name="tag_padding_right">16dp</dimen>
+    <dimen name="tag_padding_bottom">4dp</dimen>
 </resources>
