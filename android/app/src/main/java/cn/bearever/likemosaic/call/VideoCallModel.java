@@ -6,6 +6,7 @@ import android.util.Log;
 import com.google.gson.Gson;
 
 import java.util.List;
+import java.util.Map;
 
 import cn.bearever.likemosaic.Constant;
 import cn.bearever.likemosaic.MosaiApplication;
@@ -15,8 +16,11 @@ import cn.bearever.likemosaic.bean.BaseResultBean;
 import cn.bearever.likemosaic.bean.MessageBean;
 import cn.bearever.likemosaic.bean.TopicListResultBean;
 import cn.bearever.mingbase.BaseCallback;
+import cn.bearever.mingbase.app.BaseApplication;
 import cn.bearever.mingbase.app.store.SpManager;
 import cn.bearever.mingbase.chain.AsyncChain;
+import cn.bearever.mingbase.chain.core.AsyncChainError;
+import cn.bearever.mingbase.chain.core.AsyncChainErrorCallback;
 import cn.bearever.mingbase.chain.core.AsyncChainRunnable;
 import cn.bearever.mingbase.chain.core.AsyncChainTask;
 import io.agora.rtm.ErrorInfo;
@@ -36,6 +40,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
 
+import static io.agora.rtm.RtmStatusCode.ConnectionState.CONNECTION_STATE_ABORTED;
+
 /**
  * @author luoming
  * @date 2020/4/16
@@ -47,6 +53,8 @@ public class VideoCallModel implements VideoCallContact.Model {
     private VideoCallService mService;
     private Gson mGson;
     private String mRemoteUid;
+    private String mChannel;
+    private String mRtmToken;
     private VideoCallContact.OnMessageChangeListener mOnMessageChangeListener;
 
 
@@ -63,10 +71,12 @@ public class VideoCallModel implements VideoCallContact.Model {
     @Override
     public void loginRtm(String rtmToken, String channel, String remoteUid) {
         mRemoteUid = remoteUid;
+        mChannel = channel;
+        mRtmToken = rtmToken;
         mRtmClient.login(rtmToken, UidUtil.getUid(MosaiApplication.getApplication()), new ResultCallback<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
-                Log.i(TAG, "login onSuccess: ");
+                Log.d(TAG, "login onSuccess: ");
             }
 
             @Override
@@ -94,12 +104,15 @@ public class VideoCallModel implements VideoCallContact.Model {
             mRtmClient = RtmClient.createInstance(context, context.getString(R.string.agora_app_id), new RtmClientListener() {
                 @Override
                 public void onConnectionStateChanged(int i, int i1) {
-                    Log.i(TAG, "onConnectionStateChanged: ");
+                    Log.d(TAG, "onConnectionStateChanged: ");
+                    if (i == CONNECTION_STATE_ABORTED) {
+                        Log.d(TAG, "onConnectionStateChanged: 被其他的设备顶下去了");
+                    }
                 }
 
                 @Override
                 public void onMessageReceived(RtmMessage rtmMessage, String s) {
-                    Log.i(TAG, "onMessageReceived: " + rtmMessage.getText());
+//                    Log.d(TAG, "onMessageReceived: " + rtmMessage.getText());
                     if (mOnMessageChangeListener != null) {
                         final MessageBean messageBean = MessageConvertUtil.convert(rtmMessage.getText());
                         AsyncChain.withMain(new AsyncChainRunnable() {
@@ -108,14 +121,20 @@ public class VideoCallModel implements VideoCallContact.Model {
                                 mOnMessageChangeListener.onReceive(messageBean);
                                 task.onComplete();
                             }
+                        }).error(new AsyncChainErrorCallback() {
+                            @Override
+                            public void error(AsyncChainError error) throws Exception {
+                                error.getException().printStackTrace();
+                            }
                         }).go(context);
                     }
                 }
 
                 @Override
                 public void onTokenExpired() {
-                    Log.i(TAG, "onTokenExpired: ");
+                    Log.d(TAG, "onTokenExpired: ");
                 }
+
             });
         } catch (Exception e) {
             e.printStackTrace();
@@ -144,12 +163,12 @@ public class VideoCallModel implements VideoCallContact.Model {
         mRtmClient.sendMessageToPeer(uid, msg, new ResultCallback<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
-                Log.i(TAG, "send message onSuccess: ");
+//                Log.d(TAG, "send message onSuccess: ");
             }
 
             @Override
             public void onFailure(ErrorInfo errorInfo) {
-                Log.e(TAG, "send message onFailure: " + errorInfo.getErrorDescription());
+//                Log.e(TAG, "send message onFailure: " + errorInfo.getErrorDescription());
             }
         });
     }

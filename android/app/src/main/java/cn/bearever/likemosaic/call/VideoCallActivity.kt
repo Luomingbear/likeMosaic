@@ -1,9 +1,9 @@
 package cn.bearever.likemosaic.call
 
-import android.animation.ObjectAnimator
 import android.graphics.Color
 import android.graphics.drawable.AnimationDrawable
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
@@ -19,13 +19,11 @@ import cn.bearever.likemosaic.home.MosaicVideoSink
 import cn.bearever.mingbase.app.mvp.BaseActivity
 import cn.bearever.mingbase.app.util.DipPxUtil
 import cn.bearever.mingbase.app.util.ToastUtil
-import cn.bearever.mingbase.app.view.OnDoubleClickListener
 import cn.bearever.mingbase.app.view.OnDoubleTouchListener
 import com.jaeger.library.StatusBarUtil
 import io.agora.rtc.RtcEngine
 import io.agora.rtc.mediaio.IVideoSink
 import kotlinx.android.synthetic.main.activity_video_chat_view.*
-import java.util.ArrayList
 
 /**
  * 视频聊天页面
@@ -62,6 +60,7 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         if (mMatchResultBean == null) {
             endCall()
         }
+        Log.d(TAG, mMatchResultBean.toString())
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -76,7 +75,7 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         iv_like.clearAnimation()
         (iv_like.getDrawable() as AnimationDrawable).start()
         if (mMatchResultBean?.list != null) {
-            refreshTags(mMatchResultBean?.list)
+            refreshTags(mMatchResultBean?.list!!)
         }
         btn_back.setOnClickListener {
             endCall()
@@ -92,6 +91,7 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
                 mPresenter?.addLike()
             }
         })
+        showNote("快速选择几个你感兴趣的话题吧！也许会发现兴趣重叠的话题哦！")
     }
 
     private fun startDoubleClickAnimation(v: View, x: Float, y: Float) {
@@ -143,7 +143,7 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         startCall()
     }
 
-    override fun refreshTags(topicList: List<TopicBean>?) {
+    override fun refreshTags(topicList: List<TopicBean>) {
         for (i in (fl_tag.childCount - 1) downTo 0) {
             val child = fl_tag.getChildAt(i)
             if (child.id == R.id.btn_refresh || child.isSelected) {
@@ -152,14 +152,12 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
 
             fl_tag.removeView(child)
         }
-        if (topicList != null) {
-            for (topic in topicList) {
-                if (fl_tag.childCount >= MAX_TOPIC_COUNT) {
-                    break
-                }
-                val view = createTopicView(topic)
-                fl_tag.addView(view)
+        for (topic in topicList) {
+            if (fl_tag.childCount >= MAX_TOPIC_COUNT) {
+                break
             }
+            val view = createTopicView(topic)
+            fl_tag.addView(view)
         }
     }
 
@@ -185,14 +183,15 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
             v.setBackgroundResource(R.drawable.drawable_tag)
         }
         val topicBean = TopicBean(id)
+        topicBean.text = (v as TextView).text.toString()
         mPresenter?.selectTopic(topicBean, !selected)
     }
 
     override fun receiveSelectTag(selectTopicBean: SelectTopicBean?) {
         for (i in (fl_tag.childCount - 1) downTo 0) {
             val child = fl_tag.getChildAt(i)
-            if ((child.tag as Int) == selectTopicBean?.id) {
-                if (selectTopicBean.selected && child.isSelected) {
+            if (child.tag is Int && child.tag == selectTopicBean?.id) {
+                if (selectTopicBean?.selected == true && child.isSelected) {
                     child.setBackgroundResource(R.drawable.drawable_tag_both)
                 } else {
                     child.setBackgroundResource(R.drawable.drawable_tag)
@@ -258,7 +257,8 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
     }
 
     private fun joinChannel() {
-        mPresenter?.joinRoom(mMatchResultBean?.channel, mMatchResultBean?.rtcToken, mMatchResultBean?.rtmToken, mMatchResultBean?.remoteUid)
+        mPresenter?.joinRoom(mMatchResultBean?.channel, mMatchResultBean?.rtcToken,
+                mMatchResultBean?.rtmToken, mMatchResultBean?.remoteUid)
     }
 
     override fun onDestroy() {
@@ -267,6 +267,16 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
             leaveChannel()
         }
         RtcEngine.destroy()
+    }
+
+    override fun showNote(note: String?) {
+        tv_note.text = note
+        tv_note.visibility = View.VISIBLE
+        tv_note.postDelayed(object : Runnable {
+            override fun run() {
+                tv_note.visibility = View.GONE
+            }
+        }, 5000)
     }
 
     private fun leaveChannel() {

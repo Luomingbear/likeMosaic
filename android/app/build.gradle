@@ -3,6 +3,14 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
 android {
+    signingConfigs {
+        release {
+            storeFile file('/Users/bear/FlutterProjects/likeMosaic/android/app/mosaic')
+            storePassword 'mosaic2020'
+            keyAlias = 'mosaic'
+            keyPassword 'mosaic2020'
+        }
+    }
     compileSdkVersion 28
 
     defaultConfig {
@@ -13,13 +21,20 @@ android {
         versionName "1.0"
 
         ndk {
-            abiFilters 'armeabi-v7a', 'x86'
+            abiFilters 'armeabi-v7a','x86'
         }
     }
 
     buildTypes {
         release {
             minifyEnabled false
+            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+
+        debug {
+            minifyEnabled false
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
@@ -39,7 +54,7 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: '/libs', include: ['*.jar'])
+    implementation fileTree(dir: './libs', include: ['*.jar'])
     // DO NOT CHANGE, CI may needs it when packaging
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.core:core-ktx:1.0.2'

@@ -3,6 +3,8 @@ package cn.bearever.likemosaic.bean;
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.NonNull;
+
 /**
  * @author luoming
  * @date 2020/4/12
@@ -22,4 +24,10 @@ public class MatchResultBean extends BaseResultBean {
     public String remoteUid;
     public String channel;
     public ArrayList<TopicBean> list;
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "rtmToken:" + rtmToken + ",rtcToken:" + rtcToken + ",channel:" + channel + ",remoteUid:" + remoteUid + ",topic:" + list;
+    }
 }

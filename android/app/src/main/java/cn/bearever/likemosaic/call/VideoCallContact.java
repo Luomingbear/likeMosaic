@@ -4,6 +4,7 @@ import android.nfc.Tag;
 
 import java.util.List;
 
+import androidx.annotation.NonNull;
 import cn.bearever.likemosaic.bean.MessageBean;
 import cn.bearever.likemosaic.bean.SelectTopicBean;
 import cn.bearever.likemosaic.bean.TopicBean;
@@ -25,7 +26,7 @@ public class VideoCallContact {
          *
          * @param topicList
          */
-        void refreshTags(List<TopicBean> topicList);
+        void refreshTags(@NonNull List<TopicBean> topicList);
 
         /**
          * 执行刷新话题的动画
@@ -67,6 +68,11 @@ public class VideoCallContact {
          * 显示退出房间按钮
          */
         void showQuitBtn();
+
+        /**
+         * 显示提醒文字
+         */
+        void showNote(String note);
     }
 
     public interface Model extends IBaseModel {

@@ -33,22 +33,21 @@ public class MessageConvertUtil {
                 case MessageBean.KEY_SELECT_TOPIC: {
                     Type type = new TypeToken<MessageBean<SelectTopicBean>>() {
                     }.getType();
-                    MessageBean<SelectTopicBean> messageBean = mGson.fromJson(message, type);
-                    return messageBean;
+                    return mGson.<MessageBean<SelectTopicBean>>fromJson(message, type);
                 }
 
                 case MessageBean.KEY_REFRESH_TOPIC: {
                     Type type = new TypeToken<MessageBean<ArrayList<TopicBean>>>() {
                     }.getType();
-                    MessageBean<ArrayList<TopicBean>> messageBean = mGson.fromJson(message, type);
-                    return messageBean;
+                    return mGson.fromJson(message, type);
                 }
+
                 case MessageBean.KEY_REMOTE_LIKE_CHANGE: {
                     Type type = new TypeToken<MessageBean<Integer>>() {
                     }.getType();
-                    MessageBean<Integer> messageBean = mGson.fromJson(message, type);
-                    return messageBean;
+                    return mGson.fromJson(message, type);
                 }
+                
                 default: {
                     return new MessageBean("");
                 }

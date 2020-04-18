@@ -51,7 +51,7 @@ public class MatchGetController {
             //生成token
             RtcTokenBuilder rtcTokenBuilder = new RtcTokenBuilder();
             int timestamp = (int) (System.currentTimeMillis() / 1000 + expirationTimeInSeconds);
-            String rtcToken = rtcTokenBuilder.buildTokenWithUid(appId, appCertificate, matchData.channel, Objects.hashCode(uid),
+            String rtcToken = rtcTokenBuilder.buildTokenWithUserAccount(appId, appCertificate, matchData.channel,uid,
                     RtcTokenBuilder.Role.Role_Publisher, timestamp);
             RtmTokenBuilder rtmTokenBuilder = new RtmTokenBuilder();
             String rtmToken = rtmTokenBuilder.buildToken(appId, appCertificate, uid, RtmTokenBuilder.Role.Rtm_User, timestamp);

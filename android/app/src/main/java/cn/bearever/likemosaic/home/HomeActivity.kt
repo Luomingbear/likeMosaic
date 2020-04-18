@@ -40,7 +40,7 @@ class HomeActivity : BaseActivity<HomePresenter>(), HomeContact.View {
     }
 
     private fun requestPermission() {
-        AsyncPermission.with(this).request(
+        AsyncPermission.with(this).requestNoTest(
                 Manifest.permission.RECORD_AUDIO,
                 Manifest.permission.CAMERA,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE)

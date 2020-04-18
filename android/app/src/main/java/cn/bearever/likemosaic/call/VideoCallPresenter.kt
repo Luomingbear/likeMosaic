@@ -12,10 +12,12 @@ import cn.bearever.likemosaic.bean.TopicListResultBean
 import cn.bearever.mingbase.BaseCallback
 import cn.bearever.mingbase.app.mvp.BasePresenterIml
 import cn.bearever.mingbase.app.util.ToastUtil
+import io.agora.rtc.Constants.CONNECTION_CHANGED_INVALID_TOKEN
 import io.agora.rtc.IRtcEngineEventHandlerEx
 import io.agora.rtc.RtcEngine
 import io.agora.rtc.mediaio.IVideoSink
 import io.agora.rtc.video.VideoEncoderConfiguration
+import io.agora.rtm.jni.CONNECTION_STATE
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -88,18 +90,32 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
     private fun initializeEngine() {
         try {
             mRtcEngine = RtcEngine.create(context, context.getString(R.string.agora_app_id), object : IRtcEngineEventHandlerEx() {
-                override fun onJoinChannelSuccess(channel: String, uid: Int, elapsed: Int) {
-                    Log.i(TAG, "onJoinChannelSuccess: ")
+
+                // 注册 onJoinChannelSuccess 回调。
+                // 本地用户成功加入频道时，会触发该回调。
+                override fun onJoinChannelSuccess(channel: String?, uid: Int, elapsed: Int) {
+                    super.onJoinChannelSuccess(channel, uid, elapsed)
+                    Log.d(TAG, "onJoinChannelSuccess:" + uid)
                 }
 
+                // SDK 接收到第一帧远端视频并成功解码时，会触发该回调。
+                // 可以在该回调中调用 setupRemoteVideo 方法设置远端视图。
                 override fun onFirstRemoteVideoDecoded(uid: Int, width: Int, height: Int, elapsed: Int) {
                     getView()?.onUserJoin(uid)
-                    Log.i(TAG, "onFirstRemoteVideoDecoded")
                 }
 
+                override fun onConnectionStateChanged(state: Int, reason: Int) {
+                    super.onConnectionStateChanged(state, reason)
+                    Log.e(TAG, "错误了：" + reason)
+                    if (reason == CONNECTION_CHANGED_INVALID_TOKEN) {
+                        Log.e(TAG, "生成的token无效")
+                    }
+                }
+
+                // 注册 onUserOffline 回调。
+                // 远端用户离开频道或掉线时，会触发该回调。
                 override fun onUserOffline(uid: Int, reason: Int) {
                     getView()?.onUserLeft()
-                    Log.i(TAG, "onUserOffline")
                 }
             })
         } catch (e: Exception) {
@@ -149,6 +165,7 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
 
     override fun setLocalVideoRenderer(sink: IVideoSink) {
         mRtcEngine?.setLocalVideoRenderer(sink)
+        mRtcEngine?.startPreview()
     }
 
     override fun setRemoteVideoRenderer(uid: Int, sink: IVideoSink) {
@@ -156,9 +173,9 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
     }
 
     override fun joinRoom(channel: String?, rtcToken: String?, rtmToken: String?, remoteUid: String?) {
-        mChannel = channel ?: "";
+        mChannel = channel ?: ""
         mModel?.loginRtm(rtmToken, channel, remoteUid)
-        mRtcEngine?.joinChannel(rtcToken, channel, "", UidUtil.getUid(context).hashCode())
+        mRtcEngine?.joinChannelWithUserAccount(rtcToken, channel, UidUtil.getUid(context))
     }
 
     override fun quitRoom() {
