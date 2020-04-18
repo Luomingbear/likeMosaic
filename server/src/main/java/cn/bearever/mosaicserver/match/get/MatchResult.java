@@ -2,6 +2,9 @@ package cn.bearever.mosaicserver.match.get;
 
 
 import cn.bearever.mosaicserver.BaseResult;
+import cn.bearever.mosaicserver.topic.TopicDao;
+
+import java.util.List;
 
 /**
  * 匹配数据的返回值bean
@@ -15,6 +18,11 @@ public class MatchResult extends BaseResult {
      * 房间号
      */
     private String channel = "";
+
+    /**
+     * 获取信息
+     */
+    private List<TopicDao> list;
 
     public MatchResult() {
     }
@@ -38,5 +46,13 @@ public class MatchResult extends BaseResult {
 
     public void setChannel(String channel) {
         this.channel = channel;
+    }
+
+    public List<TopicDao> getList() {
+        return list;
+    }
+
+    public void setList(List<TopicDao> list) {
+        this.list = list;
     }
 }
