@@ -10,6 +10,7 @@ import android.renderscript.Type;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
+import cn.bearever.likemosaic.call.LikeManager;
 import io.agora.rtc.mediaio.AgoraSurfaceView;
 import io.agora.rtc.mediaio.MediaIO;
 
@@ -19,15 +20,23 @@ import io.agora.rtc.mediaio.MediaIO;
  */
 public class MosaicVideoSink extends AgoraSurfaceView {
     private static final String TAG = "MosaicVideoSink";
+    private boolean isLocalVideo = false;
 
     static {
         System.loadLibrary("mosaic");
     }
 
-    public MosaicVideoSink(Context context) {
+    /**
+     * 构造函数
+     *
+     * @param context
+     * @param isLocalVideo 是否是本地视频
+     */
+    public MosaicVideoSink(Context context, boolean isLocalVideo) {
         super(context);
         setPixelFormat(MediaIO.PixelFormat.I420);
         setBufferType(MediaIO.BufferType.BYTE_ARRAY);
+        this.isLocalVideo = isLocalVideo;
     }
 
     @Override
@@ -43,9 +52,10 @@ public class MosaicVideoSink extends AgoraSurfaceView {
 
     @Override
     public void consumeByteArrayFrame(byte[] data, int pixelFormat, int width, int height, int rotation, long ts) {
-        int scale = 16;
-        int bit = 32;
-        byte[] out = mosaicI420(data, width, height, scale, bit);
+        int bit = 64;
+        byte[] out = mosaicI420(data, width, height,
+                isLocalVideo ? LikeManager.getInstance().getLocalMosaicLevel() : LikeManager.getInstance().getRemoteMosaicLevel()
+                , bit);
         super.consumeByteArrayFrame(out, pixelFormat, width, height, rotation, ts);
     }
 

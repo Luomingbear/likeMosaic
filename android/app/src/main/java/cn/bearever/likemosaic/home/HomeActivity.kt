@@ -32,6 +32,9 @@ class HomeActivity : BaseActivity<HomePresenter>(), HomeContact.View {
     override fun initView() {
         StatusBarUtil.setTransparent(this)
         btn_match.setOnClickListener {
+            it.isEnabled = false
+            ToastUtil.show("开始匹配")
+            btn_match.text = "停止匹配"
             requestPermission()
         }
     }
@@ -47,7 +50,6 @@ class HomeActivity : BaseActivity<HomePresenter>(), HomeContact.View {
                 }
                 .onDenied { permissions ->
                     ToastUtil.show("缺少" + permissions[0].message)
-
                 }
     }
 
@@ -62,11 +64,15 @@ class HomeActivity : BaseActivity<HomePresenter>(), HomeContact.View {
     override fun matchFailed(msg: String) {
         //todo 匹配失败
         ToastUtil.show(msg)
+        btn_match.isEnabled = true
+        btn_match.setText(R.string.start_match)
     }
 
     override fun matchSucceed(matchResultBean: MatchResultBean) {
         //todo 匹配成功，进入聊天
         goVideoChat(matchResultBean)
+        btn_match.isEnabled = true
+        btn_match.setText(R.string.start_match)
     }
 
     private fun goVideoChat(matchResultBean: MatchResultBean) {

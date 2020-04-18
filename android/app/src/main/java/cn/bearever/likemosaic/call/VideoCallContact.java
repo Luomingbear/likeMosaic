@@ -5,6 +5,7 @@ import android.nfc.Tag;
 import java.util.List;
 
 import cn.bearever.likemosaic.bean.MessageBean;
+import cn.bearever.likemosaic.bean.SelectTopicBean;
 import cn.bearever.likemosaic.bean.TopicBean;
 import cn.bearever.likemosaic.bean.TopicListResultBean;
 import cn.bearever.mingbase.BaseCallback;
@@ -27,6 +28,18 @@ public class VideoCallContact {
         void refreshTags(List<TopicBean> topicList);
 
         /**
+         * 执行刷新话题的动画
+         *
+         * @param request 动画执行完毕是否请求刷新话题区
+         */
+        void startRefreshAnimation(boolean request);
+
+        /**
+         * 收到了对方选择/取消选择话题的消息，需要对ui进行更新
+         */
+        void receiveSelectTag(SelectTopicBean selectTopicBean);
+
+        /**
          * 更新好感度显示，需要更新马赛克级别和好感度进度条
          *
          * @param likeCount
@@ -44,6 +57,16 @@ public class VideoCallContact {
          * @param uid
          */
         void onUserJoin(int uid);
+
+        /**
+         * 我对对方的好感度降低为0
+         */
+        void localLikeEmpty();
+
+        /**
+         * 显示退出房间按钮
+         */
+        void showQuitBtn();
     }
 
     public interface Model extends IBaseModel {
@@ -145,9 +168,9 @@ public class VideoCallContact {
         void selectTopic(TopicBean topicBean, boolean isSelect);
 
         /**
-         * 发送喜欢信息，即点击屏幕
+         * 增加好感度
          */
-        void sendLike();
+        void addLike();
 
         /**
          * 刷新话题区

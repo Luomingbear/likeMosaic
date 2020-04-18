@@ -1,6 +1,5 @@
 package cn.bearever.mingbase;
 
-import cn.bearever.mingbase.app.BaseApplication;
 import cn.bearever.mingbase.app.util.ToastUtil;
 import cn.bearever.mingbase.chain.AsyncChain;
 import cn.bearever.mingbase.chain.core.AsyncChainRunnable;

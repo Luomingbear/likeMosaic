@@ -16,6 +16,9 @@ import cn.bearever.likemosaic.bean.MessageBean;
 import cn.bearever.likemosaic.bean.TopicListResultBean;
 import cn.bearever.mingbase.BaseCallback;
 import cn.bearever.mingbase.app.store.SpManager;
+import cn.bearever.mingbase.chain.AsyncChain;
+import cn.bearever.mingbase.chain.core.AsyncChainRunnable;
+import cn.bearever.mingbase.chain.core.AsyncChainTask;
 import io.agora.rtm.ErrorInfo;
 import io.agora.rtm.ResultCallback;
 import io.agora.rtm.RtmChannel;
@@ -80,7 +83,7 @@ public class VideoCallModel implements VideoCallContact.Model {
         }
     }
 
-    private void init(Context context) {
+    private void init(final Context context) {
         try {
             Retrofit build = new Retrofit.Builder()
                     .baseUrl(Constant.APP_URL)
@@ -98,11 +101,14 @@ public class VideoCallModel implements VideoCallContact.Model {
                 public void onMessageReceived(RtmMessage rtmMessage, String s) {
                     Log.i(TAG, "onMessageReceived: " + rtmMessage.getText());
                     if (mOnMessageChangeListener != null) {
-                        if (mGson == null) {
-                            mGson = new Gson();
-                        }
-                        MessageBean messageBean = mGson.fromJson(rtmMessage.getText(), MessageBean.class);
-                        mOnMessageChangeListener.onReceive(messageBean);
+                        final MessageBean messageBean = MessageConvertUtil.convert(rtmMessage.getText());
+                        AsyncChain.withMain(new AsyncChainRunnable() {
+                            @Override
+                            public void run(AsyncChainTask task) throws Exception {
+                                mOnMessageChangeListener.onReceive(messageBean);
+                                task.onComplete();
+                            }
+                        }).go(context);
                     }
                 }
 

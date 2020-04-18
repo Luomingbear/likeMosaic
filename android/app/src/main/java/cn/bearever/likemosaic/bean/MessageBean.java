@@ -9,9 +9,9 @@ import java.util.HashMap;
  * @author luoming
  * @date 2020/4/18
  */
-public class MessageBean implements Serializable {
+public class MessageBean<D extends Serializable> implements Serializable {
     public String key;
-    public HashMap<String, Object> data;
+    public D data;
     public String text;
     /**
      * 当前频道信息
@@ -23,4 +23,8 @@ public class MessageBean implements Serializable {
     }
 
     public static final String KEY_SELECT_TOPIC = "KEY_SELECT_TOPIC";
+
+    public static final String KEY_REFRESH_TOPIC = "KEY_REFRESH_TOPIC";
+
+    public static final String KEY_REMOTE_LIKE_CHANGE = "KEY_REMOTE_LIKE_CHANGE";
 }

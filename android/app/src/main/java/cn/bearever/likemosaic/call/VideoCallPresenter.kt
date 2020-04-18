@@ -1,23 +1,23 @@
 package cn.bearever.likemosaic.call
 
 import android.content.Context
+import android.text.TextUtils
 import android.util.Log
 import cn.bearever.likemosaic.R
 import cn.bearever.likemosaic.UidUtil
 import cn.bearever.likemosaic.bean.MessageBean
+import cn.bearever.likemosaic.bean.SelectTopicBean
 import cn.bearever.likemosaic.bean.TopicBean
 import cn.bearever.likemosaic.bean.TopicListResultBean
 import cn.bearever.mingbase.BaseCallback
 import cn.bearever.mingbase.app.mvp.BasePresenterIml
 import cn.bearever.mingbase.app.util.ToastUtil
-import cn.bearever.mingbase.chain.AsyncChain
-import cn.bearever.mingbase.chain.core.AsyncChainRunnable
-import cn.bearever.mingbase.chain.core.AsyncChainTask
-import io.agora.rtc.IRtcEngineEventHandler
 import io.agora.rtc.IRtcEngineEventHandlerEx
 import io.agora.rtc.RtcEngine
 import io.agora.rtc.mediaio.IVideoSink
 import io.agora.rtc.video.VideoEncoderConfiguration
+import java.util.*
+import kotlin.collections.ArrayList
 
 /**
  * @author luoming
@@ -32,9 +32,51 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
 
     private var mRtcEngine: RtcEngine? = null
     private var mChannel = ""
+    //我对对方的好感度
+    private var mLikeCountMe2Other = 60
+    //对方对我的好感度
+    private var mLikeCountOther2Me = 60
+    private var mTimerCount = 0
+    private val LOCK_LIKE_COUNT = Any()
+    private lateinit var mTimer: Timer
 
     init {
         initEngineAndJoinChannel()
+        initLikeTimer()
+    }
+
+    private fun initLikeTimer() {
+        //每一秒钟将mLikeCount-1
+        mTimer = Timer()
+        mTimer.schedule(object : TimerTask() {
+            override fun run() {
+                synchronized(LOCK_LIKE_COUNT) {
+                    mLikeCountMe2Other--
+                    mLikeCountOther2Me--
+                }
+
+                view?.refreshLike(mLikeCountOther2Me)
+
+                if (mLikeCountMe2Other <= 0) {
+                    //好感度为0，聊天结束
+                    view?.localLikeEmpty()
+                    mTimer.cancel()
+                    return
+                }
+                if (mLikeCountOther2Me <= 0) {
+                    view?.onUserLeft()
+                    mTimer.cancel()
+                }
+
+                mTimerCount++
+                if (mTimerCount == 10) {
+                    view?.showQuitBtn()
+                }
+                LikeManager.getInstance().setLikeCountMe2Other(mLikeCountMe2Other)
+                LikeManager.getInstance().setLikeCountOther2Me(mLikeCountOther2Me)
+                sendLike()
+            }
+        }, 1000, 1000)
     }
 
     private fun initEngineAndJoinChannel() {
@@ -83,12 +125,25 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
                 return@registerMessage
             }
 
-            AsyncChain.withMain(object : AsyncChainRunnable<Void, Void>() {
-                override fun run(task: AsyncChainTask<Void, Void>?) {
-                    ToastUtil.show(message.text)
-                    task?.onComplete()
+            when (message.key) {
+                MessageBean.KEY_SELECT_TOPIC -> {
+                    //选择/取消选择话题
+                    view?.receiveSelectTag(message.data as SelectTopicBean?)
                 }
-            }).go()
+
+                MessageBean.KEY_REFRESH_TOPIC -> {
+                    view?.refreshTags(message.data as ArrayList<TopicBean>)
+                    view?.startRefreshAnimation(false)
+                }
+
+                MessageBean.KEY_REMOTE_LIKE_CHANGE -> {
+                    mLikeCountOther2Me = message.data as Int
+                    view?.refreshLike(mLikeCountOther2Me)
+                }
+            }
+            if (!TextUtils.isEmpty(message.text)) {
+                ToastUtil.show(message.text)
+            }
         }
     }
 
@@ -109,6 +164,7 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
     override fun quitRoom() {
         mRtcEngine?.leaveChannel()
         mModel?.logoutRtm()
+        mTimer.cancel()
     }
 
     override fun muteAudio(mute: Boolean) {
@@ -116,24 +172,42 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
     }
 
     override fun selectTopic(topicBean: TopicBean, isSelect: Boolean) {
-        val message = MessageBean(mChannel)
+        val message = MessageBean<SelectTopicBean>(mChannel)
         message.key = MessageBean.KEY_SELECT_TOPIC
-        val map = HashMap<String, Any>()
-        map["id"] = topicBean.id
-        map["selected"] = isSelect
-        message.data = map
-        message.text = "选择" + topicBean.text
+        val selectTopicBean = SelectTopicBean()
+        selectTopicBean.id = topicBean.id
+        selectTopicBean.selected = isSelect
+        message.data = selectTopicBean
+        if (isSelect) {
+            message.text = "对方选择了【" + topicBean.text + "】话题"
+        } else {
+            message.text = "对方取消了【" + topicBean.text + "】话题"
+        }
         mModel?.sendMessage(message)
     }
 
-    override fun sendLike() {
+    override fun addLike() {
+        synchronized(LOCK_LIKE_COUNT) {
+            mLikeCountMe2Other++
+        }
+    }
 
+    private fun sendLike() {
+        val message = MessageBean<Int>(mChannel)
+        message.key = MessageBean.KEY_REMOTE_LIKE_CHANGE
+        message.data = mLikeCountMe2Other
+        mModel?.sendMessage(message)
     }
 
     override fun refreshTopics() {
         mModel?.getTopics(object : BaseCallback<TopicListResultBean>() {
             override fun suc(data: TopicListResultBean) {
                 view?.refreshTags(data.list)
+                val message = MessageBean<ArrayList<TopicBean>>(mChannel)
+                message.key = MessageBean.KEY_REFRESH_TOPIC
+                message.data = data.list
+                message.text = "对方刷新了话题区"
+                mModel?.sendMessage(message)
             }
         })
     }
