@@ -15,7 +15,7 @@ public class LikeManager {
     private final int MOSAIC_LEVEL_1 = 8;
     private final int MOSAIC_LEVEL_2 = 16;
     private final int MOSAIC_LEVEL_3 = 32;
-    private final int MOSAIC_LEVEL_NO = 2;
+    private final int MOSAIC_LEVEL_NO = 0;
 
     public static LikeManager getInstance() {
         if (instance == null) {

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/relativeLayout"
@@ -13,39 +13,35 @@
         android:id="@+id/fl_remote_container"
         android:layout_width="150dp"
         android:layout_height="150dp"
-        android:background="@android:color/darker_gray"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_gravity="center_horizontal"
+        android:background="@android:color/darker_gray" />
 
     <FrameLayout
         android:id="@+id/fl_mine_container"
         android:layout_width="150dp"
         android:layout_height="150dp"
-        android:layout_marginTop="200dp"
-        android:background="@android:color/darker_gray"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_gravity="center_horizontal"
+        android:background="@android:color/holo_red_dark" />
+
+    <ImageView
+        android:id="@+id/iv_loading"
+        android:layout_width="wrap_content"
+        android:layout_height="14dp"
+        android:layout_gravity="center_horizontal"
+        android:src="@drawable/drawable_loading" />
 
     <TextView
         android:id="@+id/btn_match"
-        android:layout_width="wrap_content"
+        android:layout_width="160dp"
         android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
         android:background="@drawable/btn_match"
+        android:gravity="center"
         android:paddingLeft="20dp"
         android:paddingTop="8dp"
         android:paddingRight="20dp"
         android:paddingBottom="8dp"
         android:text="@string/start_match"
         android:textColor="@android:color/white"
-        android:textSize="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/fl_mine_container"
-        tools:layout_conversion_absoluteHeight="37dp"
-        tools:layout_conversion_absoluteWidth="136dp"
-        tools:layout_editor_absoluteX="0dp"
-        tools:layout_editor_absoluteY="0dp" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+        android:textSize="16dp" />
+</FrameLayout>

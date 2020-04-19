@@ -65,7 +65,15 @@ public class HomeModel implements HomeContact.Model {
     }
 
     @Override
-    public void getMatchState(final String uid, final BaseCallback<MatchResultBean> callback) {
+    public void stopMatch() {
+        mGetStateCallback = null;
+    }
+
+    private volatile BaseCallback mGetStateCallback;
+
+    @Override
+    public void getMatchState(final String uid, BaseCallback<MatchResultBean> callback) {
+        mGetStateCallback = callback;
         AsyncChain.withWork(new AsyncChainRunnable<Void, MatchResultBean>() {
             @Override
             public void run(AsyncChainTask<Void, MatchResultBean> task) throws Exception {
@@ -73,9 +81,13 @@ public class HomeModel implements HomeContact.Model {
 
                 for (int i = 0; i < 25; i++) {
                     Thread.sleep(1000);
-                    matchResultBean = getMatchStateNet(uid, callback);
+                    matchResultBean = getMatchStateNet(uid, mGetStateCallback);
                     if (matchResultBean != null && matchResultBean.code == BaseResultBean.CODE_SUCCEED) {
                         break;
+                    }
+                    if (mGetStateCallback == null) {
+                        task.onComplete();
+                        return;
                     }
                 }
                 if (matchResultBean == null || matchResultBean.code == BaseResultBean.CODE_FAILED) {
@@ -89,11 +101,11 @@ public class HomeModel implements HomeContact.Model {
         }).withMain(new AsyncChainRunnable<MatchResultBean, Void>() {
             @Override
             public void run(AsyncChainTask<MatchResultBean, Void> task) throws Exception {
-                if (callback != null) {
+                if (mGetStateCallback != null) {
                     if (task.getLastResult().code == BaseResultBean.CODE_SUCCEED) {
-                        callback.suc(task.getLastResult());
+                        mGetStateCallback.suc(task.getLastResult());
                     } else {
-                        callback.fail(task.getLastResult().msg, task.getLastResult().code);
+                        mGetStateCallback.fail(task.getLastResult().msg, task.getLastResult().code);
                     }
                 }
             }

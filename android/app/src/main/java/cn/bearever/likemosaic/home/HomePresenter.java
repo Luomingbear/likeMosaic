@@ -40,6 +40,11 @@ public class HomePresenter extends BasePresenterIml<HomeContact.View, HomeContac
     }
 
     @Override
+    public void stopMatch() {
+        mModel.stopMatch();
+    }
+
+    @Override
     public void getMatchState() {
         mModel.getMatchState(UidUtil.getUid(getContext()), new BaseCallback<MatchResultBean>() {
             @Override

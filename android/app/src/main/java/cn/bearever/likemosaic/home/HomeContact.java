@@ -54,6 +54,11 @@ public class HomeContact {
          * @param callback
          */
         void getMatchState(String uid, BaseCallback<MatchResultBean> callback);
+
+        /**
+         * 停止匹配
+         */
+        void stopMatch();
     }
 
     public interface Presenter extends IBasePresenter {
@@ -66,5 +71,10 @@ public class HomeContact {
          * 获取匹配状态
          */
         void getMatchState();
+
+        /**
+         * 结束匹配
+         */
+        void stopMatch();
     }
 }
