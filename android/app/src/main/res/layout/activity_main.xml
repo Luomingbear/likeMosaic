@@ -10,18 +10,25 @@
     tools:context=".home.HomeActivity">
 
     <FrameLayout
-        android:id="@+id/fl_remote_container"
+        android:id="@+id/fl_mine_root"
         android:layout_width="150dp"
         android:layout_height="150dp"
         android:layout_gravity="center_horizontal"
-        android:background="@android:color/darker_gray" />
+        android:background="@drawable/icon_match_placeholder">
 
-    <FrameLayout
-        android:id="@+id/fl_mine_container"
-        android:layout_width="150dp"
-        android:layout_height="150dp"
-        android:layout_gravity="center_horizontal"
-        android:background="@android:color/holo_red_dark" />
+        <androidx.cardview.widget.CardView
+            android:id="@+id/fl_mine_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:layout_margin="2dp"
+            android:background="@drawable/icon_match_placeholder"
+            app:cardBackgroundColor="@android:color/transparent"
+            app:cardCornerRadius="75dp"
+            app:cardPreventCornerOverlap="false">
+
+        </androidx.cardview.widget.CardView>
+    </FrameLayout>
 
     <ImageView
         android:id="@+id/iv_loading"
@@ -44,4 +51,20 @@
         android:text="@string/start_match"
         android:textColor="@android:color/white"
         android:textSize="16dp" />
+
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/fl_remote_container"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_gravity="center_horizontal"
+        app:cardBackgroundColor="@android:color/transparent"
+        app:cardCornerRadius="75dp"
+        app:cardPreventCornerOverlap="false">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/icon_match_placeholder" />
+    </androidx.cardview.widget.CardView>
 </FrameLayout>

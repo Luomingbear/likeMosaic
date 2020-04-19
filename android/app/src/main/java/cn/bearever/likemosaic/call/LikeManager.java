@@ -54,6 +54,12 @@ public class LikeManager {
         return getMosaicLevel(mLikeCountMe2Other);
     }
 
+
+    public void reset() {
+        mLikeCountOther2Me = 60;
+        mLikeCountMe2Other = 60;
+    }
+
     private int getMosaicLevel(int likeCount) {
         if (likeCount >= 300) {
             return MOSAIC_LEVEL_NO;
@@ -65,5 +71,4 @@ public class LikeManager {
             return MOSAIC_LEVEL_3;
         }
     }
-
 }

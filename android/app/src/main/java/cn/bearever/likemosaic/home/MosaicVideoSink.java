@@ -1,24 +1,25 @@
 package cn.bearever.likemosaic.home;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.renderscript.Allocation;
-import android.renderscript.Element;
-import android.renderscript.RenderScript;
-import android.renderscript.ScriptIntrinsicYuvToRGB;
-import android.renderscript.Type;
+import android.graphics.Canvas;
+import android.graphics.Path;
+import android.graphics.PixelFormat;
+import android.graphics.Region;
 import android.util.Log;
 import android.view.SurfaceHolder;
+import android.view.ViewGroup;
 
 import cn.bearever.likemosaic.call.LikeManager;
+import cn.bearever.mingbase.app.util.DipPxUtil;
 import io.agora.rtc.mediaio.AgoraSurfaceView;
+import io.agora.rtc.mediaio.AgoraTextureView;
 import io.agora.rtc.mediaio.MediaIO;
 
 /**
  * @author luoming
  * @date 2020/4/12
  */
-public class MosaicVideoSink extends AgoraSurfaceView {
+public class MosaicVideoSink extends AgoraTextureView {
     private static final String TAG = "MosaicVideoSink";
     private boolean isLocalVideo = false;
 
@@ -37,17 +38,6 @@ public class MosaicVideoSink extends AgoraSurfaceView {
         setPixelFormat(MediaIO.PixelFormat.I420);
         setBufferType(MediaIO.BufferType.BYTE_ARRAY);
         this.isLocalVideo = isLocalVideo;
-    }
-
-    @Override
-    public void surfaceCreated(SurfaceHolder holder) {
-        super.surfaceCreated(holder);
-    }
-
-    @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        super.surfaceChanged(holder, format, width, height);
-        Log.i(TAG, "surfaceChanged: w:" + width + ",h:" + height);
     }
 
     @Override

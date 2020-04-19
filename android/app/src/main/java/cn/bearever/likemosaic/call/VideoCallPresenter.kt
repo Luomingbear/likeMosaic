@@ -116,6 +116,7 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
                         Log.e(TAG, "生成的token无效")
                     }
                 }
+
             })
         } catch (e: Exception) {
             Log.e(TAG, Log.getStackTraceString(e))

@@ -1,5 +1,8 @@
 package cn.bearever.likemosaic.call
 
+import android.animation.FloatEvaluator
+import android.animation.ObjectAnimator
+import android.animation.TypeEvaluator
 import android.graphics.Color
 import android.graphics.drawable.AnimationDrawable
 import android.os.Bundle
@@ -45,7 +48,6 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
     private var mRemoteView: View? = null
     private var mLocalView: View? = null
 
-
     override fun getLayoutId(): Int {
         return R.layout.activity_video_chat_view
     }
@@ -62,7 +64,6 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         if (mMatchResultBean == null) {
             endCall()
         }
-        Log.d(TAG, mMatchResultBean.toString())
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -241,6 +242,7 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
             ToastUtil.show("对方退出聊天")
             endCall()
         }
+        LikeManager.getInstance().reset()
     }
 
     override fun onUserJoin(uid: Int) {
@@ -319,6 +321,12 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
             }, 5000)
             mLastShowNoteTime = System.currentTimeMillis()
         }
+
+        //test
+//        val animator = ObjectAnimator.ofObject(local_video_view_container, "y", FloatEvaluator(), local_video_view_container.y, local_video_view_container.y+100F)
+//        animator.duration = 1500
+//        animator.start()
+
     }
 
     private fun leaveChannel() {
