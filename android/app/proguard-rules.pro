@@ -17,3 +17,4 @@
 #}
 
 -keep class io.agora.**{*;}
+
