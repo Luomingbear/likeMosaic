@@ -35,9 +35,9 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
     private var mRtcEngine: RtcEngine? = null
     private var mChannel = ""
     //我对对方的好感度
-    private var mLikeCountMe2Other = 60
+    private var mLikeCountMe2Other = 50
     //对方对我的好感度
-    private var mLikeCountOther2Me = 60
+    private var mLikeCountOther2Me = 50
     private var mTimerCount = 0
     private val LOCK_LIKE_COUNT = Any()
     private lateinit var mTimer: Timer
@@ -71,9 +71,14 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
                 }
 
                 mTimerCount++
-                if (mTimerCount == 10) {
+                if (mTimerCount == 5) {
                     view?.showQuitBtn()
                 }
+
+                if (mLikeCountOther2Me == 10) {
+                    view?.showNote("对方对你的好感度降至冰点了！")
+                }
+
                 LikeManager.getInstance().setLikeCountMe2Other(mLikeCountMe2Other)
                 LikeManager.getInstance().setLikeCountOther2Me(mLikeCountOther2Me)
                 sendLike()
@@ -111,12 +116,6 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
                         Log.e(TAG, "生成的token无效")
                     }
                 }
-
-                // 注册 onUserOffline 回调。
-                // 远端用户离开频道或掉线时，会触发该回调。
-                override fun onUserOffline(uid: Int, reason: Int) {
-                    getView()?.onUserLeft()
-                }
             })
         } catch (e: Exception) {
             Log.e(TAG, Log.getStackTraceString(e))
@@ -143,8 +142,8 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
 
             when (message.key) {
                 MessageBean.KEY_SELECT_TOPIC -> {
-                    //选择/取消选择话题
                     view?.receiveSelectTag(message.data as SelectTopicBean?)
+                    view?.showNote(message.text)
                 }
 
                 MessageBean.KEY_REFRESH_TOPIC -> {
@@ -153,13 +152,27 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
                 }
 
                 MessageBean.KEY_REMOTE_LIKE_CHANGE -> {
-                    mLikeCountOther2Me = message.data as Int
+                    val likeCount = message.data as Int
+                    if (likeCount - mLikeCountOther2Me > 3) {
+                        if (mLikeCountOther2Me < 100 && likeCount > 100) {
+                            view?.showNote("对方对你的好感度增加了！")
+                        } else if (mLikeCountOther2Me < 200 && likeCount > 200) {
+                            view?.showNote("对方对你的好感度增加了！")
+                        } else if (mLikeCountOther2Me < 300 && likeCount > 300) {
+                            view?.showNote("对方对你的好感度报表啦！")
+                        }
+                    }
+                    mLikeCountOther2Me = likeCount
                     view?.refreshLike(mLikeCountOther2Me)
                 }
+
+                MessageBean.KEY_QUIT_ROOM -> {
+                    view?.onUserLeft()
+                }
             }
-            if (!TextUtils.isEmpty(message.text)) {
-                ToastUtil.show(message.text)
-            }
+//            if (!TextUtils.isEmpty(message.text)) {
+//                ToastUtil.show(message.text)
+//            }
         }
     }
 
@@ -179,9 +192,18 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
     }
 
     override fun quitRoom() {
+        //发送离开频道的消息
+        sendQuitRoomMessage()
+        //
         mRtcEngine?.leaveChannel()
         mModel?.logoutRtm()
         mTimer.cancel()
+    }
+
+    private fun sendQuitRoomMessage() {
+        val message = MessageBean<String>(mChannel)
+        message.key = MessageBean.KEY_QUIT_ROOM
+        mModel?.sendMessage(message)
     }
 
     override fun muteAudio(mute: Boolean) {
@@ -205,7 +227,7 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
 
     override fun addLike() {
         synchronized(LOCK_LIKE_COUNT) {
-            mLikeCountMe2Other++
+            mLikeCountMe2Other+=2
         }
     }
 

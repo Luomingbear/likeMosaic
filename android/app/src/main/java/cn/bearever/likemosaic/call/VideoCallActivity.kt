@@ -34,15 +34,17 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
 
     companion object {
         private val TAG = VideoCallActivity::class.java.simpleName
+        private val MAX_SELECT_TOPIC_COUNT = 3
+        private val MAX_TOPIC_COUNT = 9
     }
 
     private var mMuted = false
     var mCallEnd = false
     private var mMatchResultBean: MatchResultBean? = null
+    private var mOtherSelectTopicIdList = ArrayList<Int>()
     private var mRemoteView: View? = null
     private var mLocalView: View? = null
 
-    private val MAX_TOPIC_COUNT = 9
 
     override fun getLayoutId(): Int {
         return R.layout.activity_video_chat_view
@@ -95,10 +97,16 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
     }
 
     private fun startDoubleClickAnimation(v: View, x: Float, y: Float) {
+        if (remote_video_view_container.childCount > 5) {
+            Log.d(TAG, "点赞动画太多了！")
+            return
+        }
+
         val imageView = ImageView(this)
         val p = FrameLayout.LayoutParams(DipPxUtil.dip2px(300F), DipPxUtil.dip2px(300F))
         imageView.layoutParams = p
         imageView.setImageDrawable(resources.getDrawable(R.drawable.drawable_like_click))
+        imageView.setTag("likeClickanimation")
         remote_video_view_container.addView(imageView)
         imageView.measure(0, 0)
         imageView.x = x - p.width / 2
@@ -175,11 +183,29 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         return textView
     }
 
+
     override fun onClick(v: View?) {
         val id = v?.tag as Int
         val selected = v.isSelected
+        //选中的话需要判断是否超出最大可选数量
+        if (!selected) {
+            var count = 0
+            for (i in 0 until fl_tag.childCount) {
+                val child = fl_tag.getChildAt(i)
+                if (child.isSelected) {
+                    count += 1
+                }
+            }
+            if (count >= MAX_SELECT_TOPIC_COUNT) {
+                showNote("最多可以选择" + MAX_SELECT_TOPIC_COUNT + "个话题")
+                return
+            }
+        }
+
         v.isSelected = !selected
-        if (selected) {
+        if (v.isSelected && mOtherSelectTopicIdList.indexOf(id) >= 0) {
+            v.setBackgroundResource(R.drawable.drawable_tag_both)
+        } else {
             v.setBackgroundResource(R.drawable.drawable_tag)
         }
         val topicBean = TopicBean(id)
@@ -188,6 +214,9 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
     }
 
     override fun receiveSelectTag(selectTopicBean: SelectTopicBean?) {
+        if (mOtherSelectTopicIdList.indexOf(selectTopicBean?.id) < 0) {
+            mOtherSelectTopicIdList.add(selectTopicBean?.id ?: 0)
+        }
         for (i in (fl_tag.childCount - 1) downTo 0) {
             val child = fl_tag.getChildAt(i)
             if (child.tag is Int && child.tag == selectTopicBean?.id) {
@@ -230,8 +259,9 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         var view: View? = null
         for (i in 0 until count) {
             val v = remote_video_view_container?.getChildAt(i)
-            if (v?.tag is Int && v.tag as Int == uid) {
+            if (v?.tag is Int && (v.tag as Int) == uid) {
                 view = v
+                break
             }
         }
         if (view != null) {
@@ -239,7 +269,7 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         }
         mRemoteView = MosaicVideoSink(this, false)
         remote_video_view_container?.addView(mRemoteView)
-        mPresenter?.setRemoteVideoRenderer(uid, mRemoteView as IVideoSink)
+//        mPresenter?.setRemoteVideoRenderer(uid, mRemoteView as IVideoSink)
         mRemoteView?.setTag(uid)
     }
 
@@ -269,14 +299,21 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         RtcEngine.destroy()
     }
 
+    private var mLastShowNoteTime = 0L
     override fun showNote(note: String?) {
-        tv_note.text = note
-        tv_note.visibility = View.VISIBLE
-        tv_note.postDelayed(object : Runnable {
-            override fun run() {
-                tv_note.visibility = View.GONE
-            }
-        }, 5000)
+        runOnUiThread {
+            tv_note.text = note
+            tv_note.visibility = View.VISIBLE
+            tv_note.removeCallbacks(null)
+            tv_note.postDelayed(object : Runnable {
+                override fun run() {
+                    if (System.currentTimeMillis() - mLastShowNoteTime > 4000) {
+                        tv_note.visibility = View.GONE
+                    }
+                }
+            }, 5000)
+            mLastShowNoteTime = System.currentTimeMillis()
+        }
     }
 
     private fun leaveChannel() {

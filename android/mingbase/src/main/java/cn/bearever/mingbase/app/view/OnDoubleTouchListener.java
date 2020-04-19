@@ -14,7 +14,7 @@ public abstract class OnDoubleTouchListener implements View.OnTouchListener {
     private static final long DOUBLE_TIME = 1000;
     private static long lastClickTime = 0;
     private Pair<Float, Float> mPoint;
-    private float MAX_DISDANCE = 10;
+    private float MAX_DISDANCE = 50;
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {

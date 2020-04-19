@@ -1,7 +1,6 @@
 package cn.bearever.likemosaic.bean;
 
 import java.io.Serializable;
-import java.util.HashMap;
 
 /**
  * 发送的消息格式
@@ -27,4 +26,6 @@ public class MessageBean<D extends Serializable> implements Serializable {
     public static final String KEY_REFRESH_TOPIC = "KEY_REFRESH_TOPIC";
 
     public static final String KEY_REMOTE_LIKE_CHANGE = "KEY_REMOTE_LIKE_CHANGE";
+
+    public static final String KEY_QUIT_ROOM = "KEY_QUIT_ROOM";
 }

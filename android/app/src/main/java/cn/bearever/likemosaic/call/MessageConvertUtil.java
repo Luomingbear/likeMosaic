@@ -47,7 +47,13 @@ public class MessageConvertUtil {
                     }.getType();
                     return mGson.fromJson(message, type);
                 }
-                
+
+                case MessageBean.KEY_QUIT_ROOM: {
+                    Type type = new TypeToken<MessageBean<String>>() {
+                    }.getType();
+                    return mGson.fromJson(message, type);
+                }
+
                 default: {
                     return new MessageBean("");
                 }
