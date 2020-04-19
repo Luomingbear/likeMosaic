@@ -153,10 +153,14 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
     }
 
     override fun refreshTags(topicList: List<TopicBean>) {
+        val selectList = ArrayList<Int>()
         for (i in (fl_tag.childCount - 1) downTo 0) {
             val child = fl_tag.getChildAt(i)
             if (child.id == R.id.btn_refresh || child.isSelected) {
                 continue
+            }
+            if (child.isSelected) {
+                selectList.add(child.id)
             }
 
             fl_tag.removeView(child)
@@ -164,6 +168,9 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         for (topic in topicList) {
             if (fl_tag.childCount >= MAX_TOPIC_COUNT) {
                 break
+            }
+            if (selectList.indexOf(topic.id) >= 0) {
+                continue
             }
             val view = createTopicView(topic)
             fl_tag.addView(view)
@@ -321,12 +328,6 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
             }, 5000)
             mLastShowNoteTime = System.currentTimeMillis()
         }
-
-        //test
-//        val animator = ObjectAnimator.ofObject(local_video_view_container, "y", FloatEvaluator(), local_video_view_container.y, local_video_view_container.y+100F)
-//        animator.duration = 1500
-//        animator.start()
-
     }
 
     private fun leaveChannel() {
