@@ -106,7 +106,7 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
                 // SDK 接收到第一帧远端视频并成功解码时，会触发该回调。
                 // 可以在该回调中调用 setupRemoteVideo 方法设置远端视图。
                 override fun onFirstRemoteVideoDecoded(uid: Int, width: Int, height: Int, elapsed: Int) {
-                    getView()?.onUserJoin(uid)
+                    view?.onUserJoin(uid)
                 }
 
                 override fun onConnectionStateChanged(state: Int, reason: Int) {

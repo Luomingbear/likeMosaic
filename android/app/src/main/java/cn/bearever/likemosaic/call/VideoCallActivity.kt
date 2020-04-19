@@ -244,7 +244,10 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
     }
 
     override fun onUserJoin(uid: Int) {
-        runOnUiThread { setupRemoteVideo(uid) }
+        runOnUiThread {
+            setupRemoteVideo(uid)
+            setupLocalVideo()
+        }
     }
 
     override fun localLikeEmpty() {
@@ -269,7 +272,8 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         }
         mRemoteView = MosaicVideoSink(this, false)
         remote_video_view_container?.addView(mRemoteView)
-//        mPresenter?.setRemoteVideoRenderer(uid, mRemoteView as IVideoSink)
+
+        mPresenter?.setRemoteVideoRenderer(uid, mRemoteView as IVideoSink)
         mRemoteView?.setTag(uid)
     }
 
@@ -281,6 +285,7 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
     }
 
     private fun setupLocalVideo() {
+        removeLocalVideo()
         mLocalView = MosaicVideoSink(this, true)
         local_video_view_container?.addView(mLocalView)
         mPresenter?.setLocalVideoRenderer(mLocalView as IVideoSink)
