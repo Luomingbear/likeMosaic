@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Rect;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.SurfaceView;
 
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import androidx.annotation.NonNull;
 import io.agora.rtc.IRtcEngineEventHandler;
 import io.agora.rtc.RtcEngine;
 import io.agora.rtc.internal.LastmileProbeConfig;
@@ -24,6 +26,12 @@ import io.agora.rtc.video.ChannelMediaRelayConfiguration;
 import io.agora.rtc.video.VideoCanvas;
 import io.agora.rtc.video.VideoEncoderConfiguration;
 import io.agora.rtc.video.WatermarkOptions;
+import io.agora.rtm.ErrorInfo;
+import io.agora.rtm.ResultCallback;
+import io.agora.rtm.RtmClient;
+import io.agora.rtm.RtmClientListener;
+import io.agora.rtm.RtmMessage;
+import io.agora.rtm.SendMessageOptions;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
@@ -36,9 +44,11 @@ import io.flutter.plugin.common.StandardMessageCodec;
  * AgoraRtcEnginePlugin
  */
 public class AgoraRtcEnginePlugin implements MethodCallHandler, EventChannel.StreamHandler {
-
+    private static final String TAG = "AgoraRtcEnginePlugin";
     private final Registrar mRegistrar;
     private static RtcEngine mRtcEngine;
+    private RtmClient mRtmClient;
+    private boolean loginStatus = false;
     private HashMap<String, SurfaceView> mRendererViews;
     private Handler mEventHandler = new Handler(Looper.getMainLooper());
     private EventChannel.EventSink sink;
@@ -108,7 +118,7 @@ public class AgoraRtcEnginePlugin implements MethodCallHandler, EventChannel.Str
                     mRtcEngine = RtcEngine.create(context, appId, mRtcEventHandler);
                     result.success(null);
                 } catch (Exception e) {
-                    throw new RuntimeException("NEED TO check rtc sdk init fatal error\n");
+                    throw new RuntimeException("NEED TO check rtc sdk create fatal error\n");
                 }
             }
             break;
@@ -1047,9 +1057,68 @@ public class AgoraRtcEnginePlugin implements MethodCallHandler, EventChannel.Str
                 result.success(res);
             }
             break;
-
+            case "init": {
+                String appId = call.argument("appId");
+                try {
+                    mRtmClient = RtmClient.createInstance(context.getApplicationContext(), appId, mRtmClientListener);
+                    result.success(null);
+                } catch (Exception e) {
+                    Log.d(TAG, "RTM SDK init fatal error!");
+                    throw new RuntimeException("You need to check the RTM init process.");
+                }
+                break;
+            }
+            case "login": {
+                String userId = call.argument("userId");
+                mRtmClient.login(null, userId, mLoginCallback);
+                result.success(null);
+                break;
+            }
+            case "sendPeerMessage": {
+                String peer = call.argument("peer");
+                String content = call.argument("content");
+                sendPeerMessage(peer, content);
+                result.success(null);
+                break;
+            }
+            case "logout": {
+                mRtmClient.logout(null);
+                break;
+            }
             default:
                 result.notImplemented();
+        }
+
+    }
+
+    /**
+     * 发送点对点消息
+     *
+     * @param peer    接收方的用户id，即登录时传入的id
+     * @param content 内容
+     */
+    private void sendPeerMessage(String peer, String content) {
+        if (loginStatus) {
+            final RtmMessage message = mRtmClient.createMessage();
+            message.setText(content);
+
+            SendMessageOptions option = new SendMessageOptions();
+            option.enableOfflineMessaging = true;
+
+            mRtmClient.sendMessageToPeer(peer, message, option, new ResultCallback<Void>() {
+
+                @Override
+                public void onSuccess(Void aVoid) {
+                    Log.d(TAG, "onSuccess: 发送消息成功");
+                }
+
+                @Override
+                public void onFailure(ErrorInfo errorInfo) {
+                    Log.e(TAG, "onSuccess: 发送消息失败，" + errorInfo.getErrorDescription());
+                }
+            });
+        } else {
+            Log.e(TAG, "sendPeerMessage: 登录成功才可以发送消息");
         }
     }
 
@@ -1065,6 +1134,59 @@ public class AgoraRtcEnginePlugin implements MethodCallHandler, EventChannel.Str
                 return VideoEncoderConfiguration.ORIENTATION_MODE.ORIENTATION_MODE_ADAPTIVE;
         }
     }
+
+
+    private final RtmClientListener mRtmClientListener = new RtmClientListener() {
+        @Override
+        public void onConnectionStateChanged(int state, int reason) {
+            HashMap<String, Object> map = new HashMap<>();
+            map.put("state", state);
+            map.put("reason", reason);
+            sendEvent("onConnectionStateChanged", map);
+            Log.d(TAG, "Connection state changes to "
+                    + state + " reason: " + reason);
+        }
+
+        @Override
+        public void onMessageReceived(RtmMessage rtmMessage, String peerId) {
+            String msg = rtmMessage.getText();
+            HashMap<String, Object> map = new HashMap<>();
+            HashMap<String, Object> msgmap = new HashMap<>();
+            msgmap.put("text", rtmMessage.getText());
+            msgmap.put("serverReceivedTs", rtmMessage.getServerReceivedTs());
+            msgmap.put("isOfflineMessage", rtmMessage.isOfflineMessage());
+            map.put("message", msgmap);
+            map.put("peerId", peerId);
+            sendEvent("onMessageReceived", map);
+            Log.d(TAG, "Message received " + " from " + peerId + msg);
+        }
+
+        @Override
+        public void onTokenExpired() {
+            Log.e(TAG, "onTokenExpired: token过期了");
+            sendEvent("onTokenExpired", new HashMap());
+        }
+    };
+
+    private final ResultCallback<Void> mLoginCallback = new ResultCallback<Void>() {
+        @Override
+        public void onSuccess(Void responseInfo) {
+            loginStatus = true;
+            HashMap<String, Object> map = new HashMap<>();
+            sendEvent("onLoginSuccess", map);
+            Log.d(TAG, "login success!");
+        }
+
+        @Override
+        public void onFailure(ErrorInfo errorInfo) {
+            loginStatus = false;
+            HashMap<String, Object> map = new HashMap<>();
+            map.put("errorCode", errorInfo.getErrorCode());
+            map.put("errorDesc", errorInfo.getErrorDescription());
+            sendEvent("onLoginFailure", map);
+            Log.d(TAG, "login failure!");
+        }
+    };
 
     private final IRtcEngineEventHandler mRtcEventHandler = new IRtcEngineEventHandler() {
         @Override
@@ -1690,7 +1812,7 @@ public class AgoraRtcEnginePlugin implements MethodCallHandler, EventChannel.Str
         return configuration;
     }
 
-    private void sendEvent(final String eventName, final HashMap map) {
+    private void sendEvent(final String eventName, @NonNull final HashMap map) {
         map.put("event", eventName);
         mEventHandler.post(new Runnable() {
             @Override

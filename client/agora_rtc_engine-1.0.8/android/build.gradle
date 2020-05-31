@@ -30,6 +30,13 @@ android {
 
     }
 
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
     sourceSets {
         main {
             jniLibs.srcDirs = ['libs']
@@ -44,4 +51,5 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'io.agora.rtc:full-sdk:2.9.4'
+    implementation 'io.agora.rtm:rtm-sdk:1.1.0'
 }
