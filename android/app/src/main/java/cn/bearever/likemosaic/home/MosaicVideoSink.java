@@ -23,10 +23,6 @@ public class MosaicVideoSink extends AgoraTextureView {
     private static final String TAG = "MosaicVideoSink";
     private boolean isLocalVideo = false;
 
-    static {
-        System.loadLibrary("mosaic");
-    }
-
     /**
      * 构造函数
      *
@@ -49,6 +45,7 @@ public class MosaicVideoSink extends AgoraTextureView {
         }
         int bit = 64;
         byte[] out = mosaicI420(data, width, height, mosaiclevel, bit);
+
         super.consumeByteArrayFrame(out, pixelFormat, width, height, rotation, ts);
     }
 

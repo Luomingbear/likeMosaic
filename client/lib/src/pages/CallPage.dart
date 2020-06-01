@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 
 //聊天界面
 class MyCallPage extends StatefulWidget {
+<<<<<<< HEAD
   /// non-modifiable channel name of the page
   final String channelName;
 
   /// Creates a call page with given channel name.
   const MyCallPage({Key key, this.channelName}) : super(key: key);
   
+=======
+>>>>>>> 5a1763a33554b801bd739114e751a6613121ca79
   @override
   State<StatefulWidget> createState() => MyCallPageState();
 }
@@ -71,7 +74,10 @@ class MyCallPageState extends State<MyCallPage> {
             )
           ],
         ),
+<<<<<<< HEAD
         color: Colors.purple,
+=======
+>>>>>>> 5a1763a33554b801bd739114e751a6613121ca79
       ),
     );
   }

@@ -21,27 +21,34 @@ android {
         versionName "1.0"
 
         ndk {
-            abiFilters 'armeabi-v7a','x86'
+            abiFilters 'armeabi-v7a'
         }
+
+        externalNativeBuild {
+            cmake {
+                cppFlags "-frtti -fexceptions -Wno-error=format-security"
+            }
+        }
+
     }
 
     buildTypes {
         release {
             minifyEnabled false
-            signingConfig signingConfigs.release
+
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
 
         debug {
             minifyEnabled false
-            signingConfig signingConfigs.release
+
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 
     externalNativeBuild {
         cmake {
-            path new File(projectDir, "CMakeLists.txt")
+           path new File(projectDir, "CMakeLists.txt")
         }
     }
 

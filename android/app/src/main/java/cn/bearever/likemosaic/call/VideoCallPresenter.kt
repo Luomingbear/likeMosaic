@@ -3,7 +3,9 @@ package cn.bearever.likemosaic.call
 import android.content.Context
 import android.text.TextUtils
 import android.util.Log
+import cn.bearever.likemosaic.MosaiApplication
 import cn.bearever.likemosaic.R
+import cn.bearever.likemosaic.RtcPacketObserver
 import cn.bearever.likemosaic.UidUtil
 import cn.bearever.likemosaic.bean.MessageBean
 import cn.bearever.likemosaic.bean.SelectTopicBean
@@ -17,7 +19,7 @@ import io.agora.rtc.IRtcEngineEventHandlerEx
 import io.agora.rtc.RtcEngine
 import io.agora.rtc.mediaio.IVideoSink
 import io.agora.rtc.video.VideoEncoderConfiguration
-import io.agora.rtm.jni.CONNECTION_STATE
+
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -34,8 +36,10 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
 
     private var mRtcEngine: RtcEngine? = null
     private var mChannel = ""
+
     //我对对方的好感度
     private var mLikeCountMe2Other = 50
+
     //对方对我的好感度
     private var mLikeCountOther2Me = 50
     private var mTimerCount = 0
@@ -44,7 +48,7 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
 
     init {
         initEngineAndJoinChannel()
-        initLikeTimer()
+        // initLikeTimer()
     }
 
     private fun initLikeTimer() {
@@ -93,35 +97,8 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
 
 
     private fun initializeEngine() {
-        try {
-            mRtcEngine = RtcEngine.create(context, context.getString(R.string.agora_app_id), object : IRtcEngineEventHandlerEx() {
+        mRtcEngine = (context.applicationContext as MosaiApplication).rtcEngine()
 
-                // 注册 onJoinChannelSuccess 回调。
-                // 本地用户成功加入频道时，会触发该回调。
-                override fun onJoinChannelSuccess(channel: String?, uid: Int, elapsed: Int) {
-                    super.onJoinChannelSuccess(channel, uid, elapsed)
-                    Log.d(TAG, "onJoinChannelSuccess:" + uid)
-                }
-
-                // SDK 接收到第一帧远端视频并成功解码时，会触发该回调。
-                // 可以在该回调中调用 setupRemoteVideo 方法设置远端视图。
-                override fun onFirstRemoteVideoDecoded(uid: Int, width: Int, height: Int, elapsed: Int) {
-                    view?.onUserJoin(uid)
-                }
-
-                override fun onConnectionStateChanged(state: Int, reason: Int) {
-                    super.onConnectionStateChanged(state, reason)
-                    Log.e(TAG, "错误了：" + reason)
-                    if (reason == CONNECTION_CHANGED_INVALID_TOKEN) {
-                        Log.e(TAG, "生成的token无效")
-                    }
-                }
-
-            })
-        } catch (e: Exception) {
-            Log.e(TAG, Log.getStackTraceString(e))
-            throw RuntimeException("NEED TO check rtc sdk init fatal error\n" + Log.getStackTraceString(e))
-        }
     }
 
     private fun setupVideoConfig() {
@@ -228,7 +205,7 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
 
     override fun addLike() {
         synchronized(LOCK_LIKE_COUNT) {
-            mLikeCountMe2Other+=2
+            mLikeCountMe2Other += 2
         }
     }
 

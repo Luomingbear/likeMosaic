@@ -15,6 +15,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import cn.bearever.likemosaic.Constant
 import cn.bearever.likemosaic.R
+import cn.bearever.likemosaic.RtcPacketObserver
 import cn.bearever.likemosaic.bean.MatchResultBean
 import cn.bearever.likemosaic.bean.SelectTopicBean
 import cn.bearever.likemosaic.bean.TopicBean
@@ -284,6 +285,7 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
 
         mPresenter?.setRemoteVideoRenderer(uid, mRemoteView as IVideoSink)
         mRemoteView?.setTag(uid)
+
     }
 
     private fun removeRemoteVideo() {
@@ -310,6 +312,7 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         if (!mCallEnd) {
             leaveChannel()
         }
+
         RtcEngine.destroy()
     }
 
