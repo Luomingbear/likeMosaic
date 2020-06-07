@@ -26,6 +26,7 @@ import cn.bearever.mingbase.app.util.ToastUtil
 import cn.bearever.mingbase.app.view.OnDoubleTouchListener
 import com.jaeger.library.StatusBarUtil
 import io.agora.rtc.RtcEngine
+import io.agora.rtc.mediaio.AgoraTextureView
 import io.agora.rtc.mediaio.IVideoSink
 import kotlinx.android.synthetic.main.activity_video_chat_view.*
 
@@ -286,11 +287,10 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         if (view != null) {
             return
         }
-        mRemoteView = MosaicVideoSink(this, false)
+        mRemoteView = MosaicVideoSink(this,false)
         remote_video_view_container?.addView(mRemoteView)
         mPresenter?.setRemoteVideoRenderer(uid, mRemoteView as IVideoSink)
         mRemoteView?.setTag(uid)
-
     }
 
     private fun removeRemoteVideo() {

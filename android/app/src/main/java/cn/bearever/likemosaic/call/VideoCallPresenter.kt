@@ -40,8 +40,6 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
     private val LOCK_LIKE_COUNT = Any()
     private lateinit var mTimer: Timer
 
-
-
     private fun initLikeTimer() {
         //每一秒钟将mLikeCount-1
         mTimer = Timer()
@@ -82,7 +80,7 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
     }
 
     fun initEngineAndJoinChannel() {
-        Log.e("开始调用了Presenter","-------------")
+        Log.e("开始调用了Presenter", "-------------")
         initializeEngine()
         setupVideoConfig()
 
@@ -93,6 +91,7 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
             super.onFirstRemoteVideoDecoded(uid, width, height, elapsed)
             Log.e("加入房间啦", "---------")
             view?.onUserJoin(uid)
+            initLikeTimer()
         }
     }
 

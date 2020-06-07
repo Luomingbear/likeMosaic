@@ -15,9 +15,6 @@
 #include "agora/IAgoraMediaEngine.h"
 #include "agora/IAgoraRtcEngine.h"
 
-
-
-
 int _convertColor(int color, int size) {
     int step = 256 / size;
     color = 256 - color;
@@ -31,35 +28,41 @@ int _convertColor(int color, int size) {
     return color;
 }
 
+static int sLevel = 32;
+
 
 class MediaObserver : public agora::media::IVideoFrameObserver {
 public:
     virtual bool onCaptureVideoFrame(VideoFrame &videoFrame) override {
 
+        if (sLevel == 0) {
+            return true;
+        }
+
         __android_log_print(ANDROID_LOG_ERROR, "agoraencryption", "onCaptureVideoFrame");
 
-         int height = videoFrame.height;
+        int height = videoFrame.height;
         int width = videoFrame.width;
-        int scale = 32;
+        int scale = sLevel;
         int bit = 64;
         int len = width * height;
 
         //处理Y分量，分割为8个值
         int index, tindex, y;
 
-        unsigned char *out_y = ((unsigned char*)videoFrame.yBuffer);
-        unsigned char *out_u = ((unsigned char*)videoFrame.uBuffer);
-        unsigned char *out_v = ((unsigned char*)videoFrame.vBuffer);
+        unsigned char *out_y = ((unsigned char *) videoFrame.yBuffer);
+        unsigned char *out_u = ((unsigned char *) videoFrame.uBuffer);
+        unsigned char *out_v = ((unsigned char *) videoFrame.vBuffer);
 
         char c2[10];
-        sprintf(c2,"y=%d",((unsigned char*)videoFrame.yBuffer)[0]);
-        __android_log_print(ANDROID_LOG_ERROR, "agoraencryption",c2);
+        sprintf(c2, "y=%d", ((unsigned char *) videoFrame.yBuffer)[0]);
+        __android_log_print(ANDROID_LOG_ERROR, "agoraencryption", c2);
 
         char c[100];
 
-        sprintf(c,"onCaptureVideoFrame1 %d,%d,%d,%d,%d",height,width,scale,bit,len);
+        sprintf(c, "onCaptureVideoFrame1 %d,%d,%d,%d,%d", height, width, scale, bit, len);
 
-        __android_log_print(ANDROID_LOG_ERROR, "agoraencryption",c);
+        __android_log_print(ANDROID_LOG_ERROR, "agoraencryption", c);
 
         for (int i = 0; i < height; i += scale) {
             for (int j = 0; j < width; j += scale) {
@@ -168,27 +171,8 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 }
 
 JNIEXPORT void JNICALL
-Java_cn_bearever_likemosaic_RtcPacketObserver_changeLevel(JNIEnv *env, jclass obj,int level) {
-    if (!rtcEngine) {
-        char c[30];
-        sprintf(c, "还未初始化%d", sResult);
-        __android_log_print(ANDROID_LOG_ERROR, "agoraencryption", c);
-        return;
-    }
-
-    agora::util::AutoPtr<agora::media::IMediaEngine> mediaEngine;
-    mediaEngine.queryInterface(rtcEngine, agora::AGORA_IID_MEDIA_ENGINE);
-    if (mediaEngine) {
-        //  if (enable) {
-        mediaEngine->registerVideoFrameObserver(&s_mediaObserver);
-        __android_log_print(ANDROID_LOG_ERROR, "agoraencryption", "注册成功了");
-//        } else {
-//            mediaEngine->registerVideoFrameObserver(NULL);
-//        }
-    }
-
-
-
+Java_cn_bearever_likemosaic_RtcPacketObserver_changeLevel(JNIEnv *env, jclass obj, int level) {
+    sLevel = level;
 }
 
 JNIEXPORT void JNICALL
@@ -210,7 +194,6 @@ Java_cn_bearever_likemosaic_RtcPacketObserver_register(JNIEnv *env, jclass obj) 
 //            mediaEngine->registerVideoFrameObserver(NULL);
 //        }
     }
-
 
 
 }
