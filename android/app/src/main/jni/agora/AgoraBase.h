@@ -9,6 +9,8 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
+#include <stdlib.h>
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
@@ -16,18 +18,23 @@
 #define AGORA_CALL __cdecl
 #if defined(AGORARTC_EXPORT)
 #define AGORA_API extern "C" __declspec(dllexport)
+#define AGORA_CPP_API __declspec(dllexport)
 #else
 #define AGORA_API extern "C" __declspec(dllimport)
+#define AGORA_CPP_API __declspec(dllimport)
 #endif
 #elif defined(__APPLE__)
 #include <TargetConditionals.h>
 #define AGORA_API __attribute__((visibility("default"))) extern "C"
+#define AGORA_CPP_API __attribute__((visibility("default")))
 #define AGORA_CALL
 #elif defined(__ANDROID__) || defined(__linux__)
 #define AGORA_API extern "C" __attribute__((visibility("default")))
+#define AGORA_CPP_API __attribute__((visibility("default")))
 #define AGORA_CALL
 #else
 #define AGORA_API extern "C"
+#define AGORA_CPP_API
 #define AGORA_CALL
 #endif
 
@@ -152,6 +159,7 @@ enum WARN_CODE_TYPE
     /** 122: Try connecting to another server.
     */
     WARN_OPEN_CHANNEL_TRY_NEXT_VOS = 122,
+    /** 131: The channel connection cannot be recovered. */
     WARN_CHANNEL_CONNECTION_UNRECOVERABLE = 131,
     WARN_CHANNEL_CONNECTION_IP_CHANGED = 132,
     WARN_CHANNEL_CONNECTION_PORT_CHANGED = 133,
@@ -173,30 +181,39 @@ enum WARN_CODE_TYPE
     /** 1021: Audio Device Module: the recording device fails.
     */
     WARN_ADM_RECORD_MALFUNCTION = 1021,
-    /** 1029: During a call, the audio session category should be set to 
-     * AVAudioSessionCategoryPlayAndRecord, and RtcEngine monitors this value. 
-     * If the audio session category is set to other values, this warning code 
-     * is triggered and RtcEngine will forcefully set it back to 
+    /** 1025: The audio playback or recording is interrupted by system events (such as a phone call).
+    */
+    WARN_ADM_CALL_INTERRUPTION = 1025,
+    /** 1029: During a call, the audio session category should be set to
+     * AVAudioSessionCategoryPlayAndRecord, and RtcEngine monitors this value.
+     * If the audio session category is set to other values, this warning code
+     * is triggered and RtcEngine will forcefully set it back to
      * AVAudioSessionCategoryPlayAndRecord.
     */
     WARN_ADM_IOS_CATEGORY_NOT_PLAYANDRECORD = 1029,
-    /** 
-     */
+  
     WARN_ADM_IOS_SAMPLERATE_CHANGE = 1030,
+  
     /** 1031: Audio Device Module: the recorded audio voice is too low.
     */
     WARN_ADM_RECORD_AUDIO_LOWLEVEL = 1031,
     /** 1032: Audio Device Module: the playback audio voice is too low.
     */
     WARN_ADM_PLAYOUT_AUDIO_LOWLEVEL = 1032,
-    /** 1040: Audio device module: An exception occurs with the audio drive. 
-     * Solutions: 
+    WARN_ADM_RECORD_AUDIO_IS_ACTIVE = 1033,
+    /** 1040: Audio device module: An exception occurs with the audio drive.
+     * Solutions:
      * - Disable or re-enable the audio device.
      * - Re-enable your device.
      * - Update the sound card drive.
      */
     WARN_ADM_WINDOWS_NO_DATA_READY_EVENT = 1040,
-    /** 1051: Audio Device Module: howling is detected.
+    /** 1042: Audio device module: The audio recording device is different from the audio playback device,
+     * which may cause echoes problem. Agora recommends using the same audio device to record and playback
+     * audio.
+     */
+    WARN_ADM_INCONSISTENT_AUDIO_DEVICE = 1042,
+    /** 1051: (Communication profile only) audio Processing Module: howling is detected.
     */
     WARN_APM_HOWLING = 1051,
     /** 1052: Audio Device Module: the device is in the glitch state.
@@ -205,9 +222,9 @@ enum WARN_CODE_TYPE
     /** 1053: Audio Device Module: the underlying audio settings have changed.
     */
     WARN_ADM_IMPROPER_SETTINGS = 1053,
-    /**
-        */
+    /// @cond
     WARN_ADM_WIN_CORE_NO_RECORDING_DEVICE = 1322,
+    /// @endcond
     /** 1323: Audio device module: No available playback device. 
      * Solution: Plug in the audio device.
     */
@@ -219,7 +236,7 @@ enum WARN_CODE_TYPE
      * - Update the sound card drive.
      */
     WARN_ADM_WIN_CORE_IMPROPER_CAPTURE_RELEASE = 1324,
-    /** 1610: Super-resolution warning: the original video dimensions of the remote user exceed 640 &times; 480.
+    /** 1610: Super-resolution warning: the original video dimensions of the remote user exceed 640 * 480.
     */
     WARN_SUPER_RESOLUTION_STREAM_OVER_LIMITATION = 1610,
     /** 1611: Super-resolution warning: another user is using super resolution.
@@ -228,9 +245,10 @@ enum WARN_CODE_TYPE
     /** 1612: The device is not supported.
     */
     WARN_SUPER_RESOLUTION_DEVICE_NOT_SUPPORTED = 1612,
-
+    /// @cond
     WARN_RTM_LOGIN_TIMEOUT = 2005,
     WARN_RTM_KEEP_ALIVE_TIMEOUT = 2009
+    /// @endcond
 };
 
 /** Error code.
@@ -257,7 +275,7 @@ enum ERROR_CODE_TYPE
     /** 4: The SDK does not support this function.
      */
     ERR_NOT_SUPPORTED = 4,
-    /** 5: The request is rejected. This is for internal SDK use only, and it does not return to the application through any method or callback.
+    /** 5: The request is rejected.
      */
     ERR_REFUSED = 5,
     /** 6: The buffer size is not big enough to store the returned data.
@@ -266,7 +284,7 @@ enum ERROR_CODE_TYPE
     /** 7: The SDK is not initialized before calling this method.
      */
     ERR_NOT_INITIALIZED = 7,
-    /** 9: No permission exists. This is for internal SDK use only, and it does not return to the application through any method or callback.
+    /** 9: No permission exists. Check if the user has granted access to the audio or video device.
      */
     ERR_NO_PERMISSION = 9,
     /** 10: An API method timeout occurs. Some API methods require the SDK to return the execution result, and this error occurs if the request takes too long (more than 10 seconds) for the SDK to process.
@@ -320,7 +338,7 @@ enum ERROR_CODE_TYPE
      
      The token expired due to one of the following reasons:
      
-     - Authorized Timestamp expired: The timestamp is represented by the number of seconds elapsed since 1/1/1970. The user can use the Token to access the Agora service within five minutes after the Token is generated. If the user does not access the Agora service after five minutes, this Token is no longer valid.
+     - Authorized Timestamp expired: The timestamp is represented by the number of seconds elapsed since 1/1/1970. The user can use the Token to access the Agora service within 24 hours after the Token is generated. If the user does not access the Agora service after 24 hours, this Token is no longer valid.
      - Call Expiration Timestamp expired: The timestamp is the exact time when a user can no longer use the Agora service (for example, when a user is forced to leave an ongoing call). When a value is set for the Call Expiration Timestamp, it does not mean that the token will expire, but that the user will be banned from the channel.
      */
     ERR_TOKEN_EXPIRED = 109,
@@ -328,7 +346,7 @@ enum ERROR_CODE_TYPE
      
      The token is invalid due to one of the following reasons:
      
-     - The App Certificate for the project is enabled in Dashboard, but the user is still using the App ID. Once the App Certificate is enabled, the user must use a token.
+     - The App Certificate for the project is enabled in Console, but the user is still using the App ID. Once the App Certificate is enabled, the user must use a token.
      - The uid is mandatory, and users must set the same uid as the one set in the \ref agora::rtc::IRtcEngine::joinChannel "joinChannel" method.
      */
     ERR_INVALID_TOKEN = 110,
@@ -406,104 +424,38 @@ enum ERROR_CODE_TYPE
     ERR_PUBLISH_STREAM_FORMAT_NOT_SUPPORTED = 156,
 
     //signaling: 400~600
-    /**
-    */
     ERR_LOGOUT_OTHER = 400,  //
-    /** 401: The user logged out.
-     */
     ERR_LOGOUT_USER = 401,  // logout by user
-    /** 402: Network failure.
-     */
     ERR_LOGOUT_NET = 402,  // network failure
-    /** 403: Logged in another device.
-     */
     ERR_LOGOUT_KICKED = 403,  // login in other device
-    /**
-     */
     ERR_LOGOUT_PACKET = 404,  //
-    /** 405: The token expired.
-     */
     ERR_LOGOUT_TOKEN_EXPIRED = 405,  // token expired
-    /**
-     */
     ERR_LOGOUT_OLDVERSION = 406,  //
-    /**
-     */
     ERR_LOGOUT_TOKEN_WRONG = 407,
-    /**
-    */
     ERR_LOGOUT_ALREADY_LOGOUT = 408,
-    /**
-     */
     ERR_LOGIN_OTHER = 420,
-    /**
-    */
     ERR_LOGIN_NET = 421,
-    /**
-     */
     ERR_LOGIN_FAILED = 422,
-    /**
-     */
     ERR_LOGIN_CANCELED = 423,
-    /**
-     */
     ERR_LOGIN_TOKEN_EXPIRED = 424,
-    /**
-     */
     ERR_LOGIN_OLD_VERSION = 425,
-    /**
-     */
     ERR_LOGIN_TOKEN_WRONG = 426,
-    /**
-     */
     ERR_LOGIN_TOKEN_KICKED = 427,
-    /**
-     */
     ERR_LOGIN_ALREADY_LOGIN = 428,
-    /**
-    */
     ERR_JOIN_CHANNEL_OTHER = 440,
-    /**
-     */
     ERR_SEND_MESSAGE_OTHER = 440,
-    /**
-     */
     ERR_SEND_MESSAGE_TIMEOUT = 441,
-    /**
-     */
     ERR_QUERY_USERNUM_OTHER = 450,
-    /**
-     */
     ERR_QUERY_USERNUM_TIMEOUT = 451,
-    /**
-     */
     ERR_QUERY_USERNUM_BYUSER = 452,
-    /**
-     */
     ERR_LEAVE_CHANNEL_OTHER = 460,
-    /**
-     */
     ERR_LEAVE_CHANNEL_KICKED = 461,
-    /**
-     */
     ERR_LEAVE_CHANNEL_BYUSER = 462,
-    /**
-     */
     ERR_LEAVE_CHANNEL_LOGOUT = 463,
-    /**
-     */
     ERR_LEAVE_CHANNEL_DISCONNECTED = 464,
-    /**
-     */
     ERR_INVITE_OTHER = 470,
-    /**
-     */
     ERR_INVITE_REINVITE = 471,
-    /**
-     */
     ERR_INVITE_NET = 472,
-    /**
-     */
     ERR_INVITE_PEER_OFFLINE = 473,
     ERR_INVITE_TIMEOUT = 474,
     ERR_INVITE_CANT_RECV = 475,
@@ -632,7 +584,9 @@ enum ERROR_CODE_TYPE
      * session category is not compatible with the settings of the Audio Unit.
     */
     ERR_ADM_IOS_VPIO_RESTART_FAIL = 1214,
+    /// @cond
     ERR_ADM_IOS_SET_RENDER_CALLBACK_FAIL = 1219,
+    /// @endcond
     /** **DEPRECATED** */
     ERR_ADM_IOS_SESSION_SAMPLERATR_ZERO = 1221,
     /** 1301: Audio device module: An audio driver abnomality or a 
@@ -774,7 +728,9 @@ enum LOG_FILTER_TYPE
     LOG_FILTER_ERROR = 0x000c,
      /** 0x0008: Outputs CRITICAL level log information. */
     LOG_FILTER_CRITICAL = 0x0008,
+    /// @cond
     LOG_FILTER_MASK = 0x80f,
+    /// @endcond
 };
 } // namespace agora
 

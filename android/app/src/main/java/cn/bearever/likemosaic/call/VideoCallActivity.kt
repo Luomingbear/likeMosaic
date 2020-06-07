@@ -95,7 +95,11 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
                 mPresenter?.addLike()
             }
         })
+
         showNote("快速选择几个你感兴趣的话题吧！也许会发现兴趣重叠的话题哦！")
+
+        RtcPacketObserver.register()
+
     }
 
     private fun startDoubleClickAnimation(v: View, x: Float, y: Float) {
@@ -150,6 +154,7 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
 
     override fun initPresenter() {
         mPresenter = VideoCallPresenter(this, this)
+        mPresenter!!.initEngineAndJoinChannel()
         startCall()
     }
 
@@ -255,6 +260,7 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
 
     override fun onUserJoin(uid: Int) {
         runOnUiThread {
+            Log.e("加入房间啦","----------")
             setupRemoteVideo(uid)
             setupLocalVideo()
         }
@@ -282,7 +288,6 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         }
         mRemoteView = MosaicVideoSink(this, false)
         remote_video_view_container?.addView(mRemoteView)
-
         mPresenter?.setRemoteVideoRenderer(uid, mRemoteView as IVideoSink)
         mRemoteView?.setTag(uid)
 
@@ -308,12 +313,11 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         if (!mCallEnd) {
             leaveChannel()
         }
-
-        RtcEngine.destroy()
+        RtcPacketObserver.unregister()
+        super.onDestroy()
     }
 
     private var mLastShowNoteTime = 0L

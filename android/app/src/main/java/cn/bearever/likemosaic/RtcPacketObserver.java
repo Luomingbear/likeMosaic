@@ -4,20 +4,7 @@ import android.util.Log;
 
 public class RtcPacketObserver {
 
-    static {
-        Log.e("执行2","----------");
-        System.loadLibrary("mosaic");
-    }
+    public static native void register();
 
-    public final void registerProcessing() {
-        register();
-    }
-
-    public final void unregisterProcessing() {
-        unregister();
-    }
-
-    private native void register();
-
-    private native void unregister();
+    public static native void unregister();
 }

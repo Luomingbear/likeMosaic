@@ -1,5 +1,7 @@
 package cn.bearever.likemosaic;
 
+import android.util.Log;
+
 import java.util.ArrayList;
 
 import io.agora.rtc.IRtcEngineEventHandler;
@@ -31,6 +33,7 @@ public class AgoraEventHandler extends IRtcEngineEventHandler {
 
     @Override
     public void onFirstRemoteVideoDecoded(int uid, int width, int height, int elapsed) {
+
         for (EventHandler handler : mHandler) {
             handler.onFirstRemoteVideoDecoded(uid, width, height, elapsed);
         }

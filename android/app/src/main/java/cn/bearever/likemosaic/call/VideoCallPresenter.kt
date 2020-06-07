@@ -1,10 +1,9 @@
 package cn.bearever.likemosaic.call
 
 import android.content.Context
-import android.text.TextUtils
 import android.util.Log
+import cn.bearever.likemosaic.BaseEventHandler
 import cn.bearever.likemosaic.MosaiApplication
-import cn.bearever.likemosaic.R
 import cn.bearever.likemosaic.RtcPacketObserver
 import cn.bearever.likemosaic.UidUtil
 import cn.bearever.likemosaic.bean.MessageBean
@@ -13,15 +12,10 @@ import cn.bearever.likemosaic.bean.TopicBean
 import cn.bearever.likemosaic.bean.TopicListResultBean
 import cn.bearever.mingbase.BaseCallback
 import cn.bearever.mingbase.app.mvp.BasePresenterIml
-import cn.bearever.mingbase.app.util.ToastUtil
-import io.agora.rtc.Constants.CONNECTION_CHANGED_INVALID_TOKEN
-import io.agora.rtc.IRtcEngineEventHandlerEx
 import io.agora.rtc.RtcEngine
 import io.agora.rtc.mediaio.IVideoSink
 import io.agora.rtc.video.VideoEncoderConfiguration
-
 import java.util.*
-import kotlin.collections.ArrayList
 
 /**
  * @author luoming
@@ -46,10 +40,7 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
     private val LOCK_LIKE_COUNT = Any()
     private lateinit var mTimer: Timer
 
-    init {
-        initEngineAndJoinChannel()
-        // initLikeTimer()
-    }
+
 
     private fun initLikeTimer() {
         //每一秒钟将mLikeCount-1
@@ -90,15 +81,25 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
         }, 1000, 1000)
     }
 
-    private fun initEngineAndJoinChannel() {
+    fun initEngineAndJoinChannel() {
+        Log.e("开始调用了Presenter","-------------")
         initializeEngine()
         setupVideoConfig()
+
     }
 
+    private var mRtcHandler = object : BaseEventHandler() {
+        override fun onFirstRemoteVideoDecoded(uid: Int, width: Int, height: Int, elapsed: Int) {
+            super.onFirstRemoteVideoDecoded(uid, width, height, elapsed)
+            Log.e("加入房间啦", "---------")
+            view?.onUserJoin(uid)
+        }
+    }
 
     private fun initializeEngine() {
-        mRtcEngine = (context.applicationContext as MosaiApplication).rtcEngine()
-
+        val app = context.applicationContext as MosaiApplication
+        mRtcEngine = app.rtcEngine()
+        app.registerHandler(mRtcHandler)
     }
 
     private fun setupVideoConfig() {
@@ -172,6 +173,8 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
     override fun quitRoom() {
         //发送离开频道的消息
         sendQuitRoomMessage()
+        val app = context.applicationContext as MosaiApplication
+        app.unregisterHandler(mRtcHandler)
         //
         mRtcEngine?.leaveChannel()
         mModel?.logoutRtm()

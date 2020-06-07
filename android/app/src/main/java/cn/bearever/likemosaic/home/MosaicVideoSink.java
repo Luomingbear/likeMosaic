@@ -38,15 +38,15 @@ public class MosaicVideoSink extends AgoraTextureView {
 
     @Override
     public void consumeByteArrayFrame(byte[] data, int pixelFormat, int width, int height, int rotation, long ts) {
-        int mosaiclevel = isLocalVideo ? LikeManager.getInstance().getLocalMosaicLevel() : LikeManager.getInstance().getRemoteMosaicLevel();
-        if (mosaiclevel == 0) {
-            super.consumeByteArrayFrame(data, pixelFormat, width, height, rotation, ts);
-            return;
-        }
-        int bit = 64;
-        byte[] out = mosaicI420(data, width, height, mosaiclevel, bit);
+        // int mosaiclevel = isLocalVideo ? LikeManager.getInstance().getLocalMosaicLevel() : LikeManager.getInstance().getRemoteMosaicLevel();
+//        if (mosaiclevel == 0) {
+//            super.consumeByteArrayFrame(data, pixelFormat, width, height, rotation, ts);
+//            return;
+//        }
+//        int bit = 64;
+//        byte[] out = mosaicI420(data, width, height, mosaiclevel, bit);
 
-        super.consumeByteArrayFrame(out, pixelFormat, width, height, rotation, ts);
+        super.consumeByteArrayFrame(data, pixelFormat, width, height, rotation, ts);
     }
 
     /**

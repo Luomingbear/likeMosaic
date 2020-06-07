@@ -16,70 +16,123 @@
 #include "agora/IAgoraRtcEngine.h"
 
 
-class AgoraRTCPacketObserver : public agora::rtc::IPacketObserver {
-    typedef std::vector<unsigned char> buffer_type;
 
+
+int _convertColor(int color, int size) {
+    int step = 256 / size;
+    color = 256 - color;
+    color = 256 - color / step * step;
+    if (color > 255) {
+        return 255;
+    }
+    if (color < 0) {
+        return 0;
+    }
+    return color;
+}
+
+
+class MediaObserver : public agora::media::IVideoFrameObserver {
 public:
-    AgoraRTCPacketObserver() {
-        m_txAudioBuffer.resize(2048);
-        m_rxAudioBuffer.resize(2048);
-        m_txVideoBuffer.resize(2048);
-        m_rxVideoBuffer.resize(2048);
-    }
+    virtual bool onCaptureVideoFrame(VideoFrame &videoFrame) override {
 
-    virtual bool onSendAudioPacket(Packet &packet) override {
-        return onSendPacket(packet, m_txAudioBuffer);
-    }
+        __android_log_print(ANDROID_LOG_ERROR, "agoraencryption", "onCaptureVideoFrame");
 
-    virtual bool onSendVideoPacket(Packet &packet) override {
-        return onSendPacket(packet, m_txVideoBuffer);
-    }
+         int height = videoFrame.height;
+        int width = videoFrame.width;
+        int scale = 32;
+        int bit = 64;
+        int len = width * height;
 
-    virtual bool onReceiveAudioPacket(Packet &packet) override {
-        return onReceivePacket(packet, m_rxAudioBuffer);
-    }
+        //处理Y分量，分割为8个值
+        int index, tindex, y;
 
-    virtual bool onReceiveVideoPacket(Packet &packet) override {
-        return onReceivePacket(packet, m_rxVideoBuffer);
-    }
+        unsigned char *out_y = ((unsigned char*)videoFrame.yBuffer);
+        unsigned char *out_u = ((unsigned char*)videoFrame.uBuffer);
+        unsigned char *out_v = ((unsigned char*)videoFrame.vBuffer);
 
-private:
-    static bool onSendPacket(Packet &packet, buffer_type &buffer) {
-        __android_log_print(ANDROID_LOG_INFO, "agoraencryption", "onSendPacket");
-//        size_t i;
-//        const unsigned char* p = packet.buffer;
-//        const unsigned char* pe = packet.buffer + packet.size;
-//        for (i = 0; p < pe && i < buffer.size(); ++p, ++i)
-//        {
-//            buffer[i] = *p ^ 0x55;
-//        }
-//        packet.buffer = &buffer[0];
-//        packet.size = i;
+        char c2[10];
+        sprintf(c2,"y=%d",((unsigned char*)videoFrame.yBuffer)[0]);
+        __android_log_print(ANDROID_LOG_ERROR, "agoraencryption",c2);
+
+        char c[100];
+
+        sprintf(c,"onCaptureVideoFrame1 %d,%d,%d,%d,%d",height,width,scale,bit,len);
+
+        __android_log_print(ANDROID_LOG_ERROR, "agoraencryption",c);
+
+        for (int i = 0; i < height; i += scale) {
+            for (int j = 0; j < width; j += scale) {
+                index = width * i + j;
+                y = out_y[index];
+
+                for (int k = 0; k < scale; k++) {
+                    for (int p = 0; p < scale; p++) {
+                        tindex = index + (k * width + p);
+                        if (tindex < len) {
+                            y += out_y[tindex];
+                        }
+                    }
+                }
+                y = y / scale / scale;
+                for (int k = 0; k < scale; k++) {
+                    for (int p = 0; p < scale; p++) {
+                        tindex = index + (k * width + p);
+                        if (tindex < len) {
+                            out_y[tindex] = _convertColor(y, bit);
+                        }
+                    }
+                }
+            }
+        }
+
+        __android_log_print(ANDROID_LOG_ERROR, "agoraencryption", "onCaptureVideoFrame2");
+
+        //处理UV分量
+        int u, v;
+        index = tindex = u = v = 0;
+        scale = scale / 2;
+        for (int i = 0; i < height / 2; i += scale) {
+            for (int j = 0; j < width / 2; j += scale) {
+                index = width / 2 * i + j;
+                u = v = 0;
+                for (int k = 0; k < scale; k++) {
+                    for (int p = 0; p < scale; p++) {
+                        tindex = index + (k * width / 2 + p);
+                        if (tindex < len / 4) {
+                            u = u + out_u[tindex];
+                            v = v + out_v[tindex];
+                        }
+                    }
+                }
+                u = u / scale / scale;
+                v = v / scale / scale;
+
+                for (int k = 0; k < scale; k++) {
+                    for (int p = 0; p < scale; p++) {
+                        tindex = index + (k * width / 2 + p);
+                        if (tindex < len / 4) {
+                            out_u[tindex] = u;
+                            out_v[tindex] = v;
+                        }
+                    }
+                }
+            }
+        }
+
+        __android_log_print(ANDROID_LOG_ERROR, "agoraencryption", "onCaptureVideoFrame3");
+
         return true;
     }
 
-    static bool onReceivePacket(Packet &packet, buffer_type &buffer) {
-        __android_log_print(ANDROID_LOG_INFO, "agoraencryption", "onReceivePacket");
-//        size_t i = 0;
-//        const unsigned char* p = packet.buffer;
-//        const unsigned char* pe = packet.buffer + packet.size;
-//        for (i = 0; p < pe && i < buffer.size(); ++p, ++i)
-//        {
-//            buffer[i] = *p ^ 0x55;
-//        }
-//        packet.buffer = &buffer[0];
-//        packet.size = i;
+    virtual bool onRenderVideoFrame(unsigned int uid, VideoFrame &videoFrame) override {
+        __android_log_print(ANDROID_LOG_ERROR, "agoraencryption", "onRenderVideoFrame");
         return true;
     }
 
-private:
-    buffer_type m_txAudioBuffer;
-    buffer_type m_rxAudioBuffer;
-    buffer_type m_txVideoBuffer;
-    buffer_type m_rxVideoBuffer;
 };
 
-static AgoraRTCPacketObserver s_packetObserver;
+static MediaObserver s_mediaObserver;
 
 static agora::rtc::IRtcEngine *rtcEngine = NULL;
 
@@ -90,7 +143,7 @@ extern "C" {
 #endif
 
 int __attribute__((visibility("default")))
-loadAgoraRtcEnginePlugin(agora::rtc::IRtcEngine *engine)  {
+loadAgoraRtcEnginePlugin(agora::rtc::IRtcEngine *engine) {
     rtcEngine = engine;
     sResult += 1;
     // if do registerPacketObserver here, SDK may return -7(ERR_NOT_INITIALIZED)
@@ -115,24 +168,60 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 }
 
 JNIEXPORT void JNICALL
-Java_cn_bearever_likemosaic_RtcPacketObserver_register(JNIEnv *env, jobject obj) {
+Java_cn_bearever_likemosaic_RtcPacketObserver_changeLevel(JNIEnv *env, jclass obj,int level) {
     if (!rtcEngine) {
         char c[30];
         sprintf(c, "还未初始化%d", sResult);
-        __android_log_print(ANDROID_LOG_INFO, "agoraencryption", c);
+        __android_log_print(ANDROID_LOG_ERROR, "agoraencryption", c);
         return;
     }
-    __android_log_print(ANDROID_LOG_INFO, "agoraencryption", "doRegisterProcessing");
-    rtcEngine->registerPacketObserver(&s_packetObserver);
+
+    agora::util::AutoPtr<agora::media::IMediaEngine> mediaEngine;
+    mediaEngine.queryInterface(rtcEngine, agora::AGORA_IID_MEDIA_ENGINE);
+    if (mediaEngine) {
+        //  if (enable) {
+        mediaEngine->registerVideoFrameObserver(&s_mediaObserver);
+        __android_log_print(ANDROID_LOG_ERROR, "agoraencryption", "注册成功了");
+//        } else {
+//            mediaEngine->registerVideoFrameObserver(NULL);
+//        }
+    }
+
+
+
 }
 
 JNIEXPORT void JNICALL
-Java_cn_bearever_likemosaic_RtcPacketObserver_unregister(JNIEnv *env, jobject obj) {
+Java_cn_bearever_likemosaic_RtcPacketObserver_register(JNIEnv *env, jclass obj) {
     if (!rtcEngine) {
-        __android_log_print(ANDROID_LOG_INFO, "agoraencryption", "还未初始化");
+        char c[30];
+        sprintf(c, "还未初始化%d", sResult);
+        __android_log_print(ANDROID_LOG_ERROR, "agoraencryption", c);
         return;
     }
-    __android_log_print(ANDROID_LOG_INFO, "agoraencryption", "doUnregisterProcessing");
+
+    agora::util::AutoPtr<agora::media::IMediaEngine> mediaEngine;
+    mediaEngine.queryInterface(rtcEngine, agora::AGORA_IID_MEDIA_ENGINE);
+    if (mediaEngine) {
+        //  if (enable) {
+        mediaEngine->registerVideoFrameObserver(&s_mediaObserver);
+        __android_log_print(ANDROID_LOG_ERROR, "agoraencryption", "注册成功了");
+//        } else {
+//            mediaEngine->registerVideoFrameObserver(NULL);
+//        }
+    }
+
+
+
+}
+
+JNIEXPORT void JNICALL
+Java_cn_bearever_likemosaic_RtcPacketObserver_unregister(JNIEnv *env, jclass obj) {
+    if (!rtcEngine) {
+        __android_log_print(ANDROID_LOG_ERROR, "agoraencryption", "还未初始化");
+        return;
+    }
+    __android_log_print(ANDROID_LOG_ERROR, "agoraencryption", "doUnregisterProcessing");
     rtcEngine->registerPacketObserver(nullptr);
 }
 
