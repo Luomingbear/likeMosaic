@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.ViewGroup;
 
+import cn.bearever.likemosaic.RtcPacketObserver;
 import cn.bearever.likemosaic.call.LikeManager;
 import cn.bearever.mingbase.app.util.DipPxUtil;
 import io.agora.rtc.mediaio.AgoraSurfaceView;
@@ -22,10 +23,6 @@ import io.agora.rtc.mediaio.MediaIO;
 public class MosaicVideoSink extends AgoraTextureView {
     private static final String TAG = "MosaicVideoSink";
     private boolean isLocalVideo = false;
-
-    static {
-        System.loadLibrary("mosaic");
-    }
 
     /**
      * 构造函数
@@ -42,14 +39,12 @@ public class MosaicVideoSink extends AgoraTextureView {
 
     @Override
     public void consumeByteArrayFrame(byte[] data, int pixelFormat, int width, int height, int rotation, long ts) {
-        int mosaiclevel = isLocalVideo ? LikeManager.getInstance().getLocalMosaicLevel() : LikeManager.getInstance().getRemoteMosaicLevel();
-        if (mosaiclevel == 0) {
-            super.consumeByteArrayFrame(data, pixelFormat, width, height, rotation, ts);
-            return;
+        if (isLocalVideo) {
+            int mosaiclevel = LikeManager.getInstance().getLocalMosaicLevel();
+            RtcPacketObserver.changeLevel(mosaiclevel);
         }
-        int bit = 64;
-        byte[] out = mosaicI420(data, width, height, mosaiclevel, bit);
-        super.consumeByteArrayFrame(out, pixelFormat, width, height, rotation, ts);
+
+        super.consumeByteArrayFrame(data, pixelFormat, width, height, rotation, ts);
     }
 
     /**

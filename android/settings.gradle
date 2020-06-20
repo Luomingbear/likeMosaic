@@ -1,2 +1,4 @@
 include ':app'
 include ':mingbase'
+include ':sample-video-encrypt'
+include ':lib-component'

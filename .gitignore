@@ -33,5 +33,6 @@
 **/android/app/.classpath
 **/android/app/.project
 **/android/app/.settings/
+client/pubspec.lock
 **/.externalNativeBuild
 **/build/

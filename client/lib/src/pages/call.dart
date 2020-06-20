@@ -51,7 +51,11 @@ class _CallPageState extends State<CallPage> {
     _addAgoraEventHandlers();
     await AgoraRtcEngine.enableWebSdkInteroperability(true);
     await AgoraRtcEngine.setParameters(
+<<<<<<< HEAD
         '''{\"che.video.lowBitRateStreamParameter\":{\"width\":512,\"height\":640,\"frameRate\":15,\"bitRate\":512}}''');
+=======
+        '''{\"che.video.lowBitRateStreamParameter\":{\"width\":320,\"height\":180,\"frameRate\":15,\"bitRate\":140}}''');
+>>>>>>> 5a1763a33554b801bd739114e751a6613121ca79
     await AgoraRtcEngine.joinChannel(null, widget.channelName, null, 0);
   }
 

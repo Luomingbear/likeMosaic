@@ -74,6 +74,7 @@ pixStyleYuv(unsigned char *input_yuv, unsigned char *output_yuv, int width, int 
     memcpy(out_y, input_yuv, len);
     memcpy(out_u, input_yuv + len, len / 4);
     memcpy(out_v, input_yuv + len + len / 4, len / 4);
+
     //处理Y分量，分割为8个值
     int index, tindex, y;
 

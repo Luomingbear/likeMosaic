@@ -25,7 +25,7 @@ import io.agora.rtc.IRtcEngineEventHandlerEx
 import io.agora.rtc.RtcEngine
 import io.agora.rtc.mediaio.IVideoSink
 import io.agora.rtc.video.VideoEncoderConfiguration
-import io.agora.rtm.RtmCallEventListener
+
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_video_chat_view.*
 

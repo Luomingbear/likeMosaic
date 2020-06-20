@@ -1,9 +1,10 @@
 package cn.bearever.likemosaic.call
 
 import android.content.Context
-import android.text.TextUtils
 import android.util.Log
-import cn.bearever.likemosaic.R
+import cn.bearever.likemosaic.BaseEventHandler
+import cn.bearever.likemosaic.MosaiApplication
+import cn.bearever.likemosaic.RtcPacketObserver
 import cn.bearever.likemosaic.UidUtil
 import cn.bearever.likemosaic.bean.MessageBean
 import cn.bearever.likemosaic.bean.SelectTopicBean
@@ -11,15 +12,10 @@ import cn.bearever.likemosaic.bean.TopicBean
 import cn.bearever.likemosaic.bean.TopicListResultBean
 import cn.bearever.mingbase.BaseCallback
 import cn.bearever.mingbase.app.mvp.BasePresenterIml
-import cn.bearever.mingbase.app.util.ToastUtil
-import io.agora.rtc.Constants.CONNECTION_CHANGED_INVALID_TOKEN
-import io.agora.rtc.IRtcEngineEventHandlerEx
 import io.agora.rtc.RtcEngine
 import io.agora.rtc.mediaio.IVideoSink
 import io.agora.rtc.video.VideoEncoderConfiguration
-import io.agora.rtm.jni.CONNECTION_STATE
 import java.util.*
-import kotlin.collections.ArrayList
 
 /**
  * @author luoming
@@ -34,18 +30,15 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
 
     private var mRtcEngine: RtcEngine? = null
     private var mChannel = ""
+
     //我对对方的好感度
     private var mLikeCountMe2Other = 50
+
     //对方对我的好感度
     private var mLikeCountOther2Me = 50
     private var mTimerCount = 0
     private val LOCK_LIKE_COUNT = Any()
     private lateinit var mTimer: Timer
-
-    init {
-        initEngineAndJoinChannel()
-        initLikeTimer()
-    }
 
     private fun initLikeTimer() {
         //每一秒钟将mLikeCount-1
@@ -86,42 +79,26 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
         }, 1000, 1000)
     }
 
-    private fun initEngineAndJoinChannel() {
+    fun initEngineAndJoinChannel() {
+        Log.e("开始调用了Presenter", "-------------")
         initializeEngine()
         setupVideoConfig()
+
     }
 
+    private var mRtcHandler = object : BaseEventHandler() {
+        override fun onFirstRemoteVideoDecoded(uid: Int, width: Int, height: Int, elapsed: Int) {
+            super.onFirstRemoteVideoDecoded(uid, width, height, elapsed)
+            Log.e("加入房间啦", "---------")
+            view?.onUserJoin(uid)
+            initLikeTimer()
+        }
+    }
 
     private fun initializeEngine() {
-        try {
-            mRtcEngine = RtcEngine.create(context, context.getString(R.string.agora_app_id), object : IRtcEngineEventHandlerEx() {
-
-                // 注册 onJoinChannelSuccess 回调。
-                // 本地用户成功加入频道时，会触发该回调。
-                override fun onJoinChannelSuccess(channel: String?, uid: Int, elapsed: Int) {
-                    super.onJoinChannelSuccess(channel, uid, elapsed)
-                    Log.d(TAG, "onJoinChannelSuccess:" + uid)
-                }
-
-                // SDK 接收到第一帧远端视频并成功解码时，会触发该回调。
-                // 可以在该回调中调用 setupRemoteVideo 方法设置远端视图。
-                override fun onFirstRemoteVideoDecoded(uid: Int, width: Int, height: Int, elapsed: Int) {
-                    view?.onUserJoin(uid)
-                }
-
-                override fun onConnectionStateChanged(state: Int, reason: Int) {
-                    super.onConnectionStateChanged(state, reason)
-                    Log.e(TAG, "错误了：" + reason)
-                    if (reason == CONNECTION_CHANGED_INVALID_TOKEN) {
-                        Log.e(TAG, "生成的token无效")
-                    }
-                }
-
-            })
-        } catch (e: Exception) {
-            Log.e(TAG, Log.getStackTraceString(e))
-            throw RuntimeException("NEED TO check rtc sdk init fatal error\n" + Log.getStackTraceString(e))
-        }
+        val app = context.applicationContext as MosaiApplication
+        mRtcEngine = app.rtcEngine()
+        app.registerHandler(mRtcHandler)
     }
 
     private fun setupVideoConfig() {
@@ -195,6 +172,8 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
     override fun quitRoom() {
         //发送离开频道的消息
         sendQuitRoomMessage()
+        val app = context.applicationContext as MosaiApplication
+        app.unregisterHandler(mRtcHandler)
         //
         mRtcEngine?.leaveChannel()
         mModel?.logoutRtm()
@@ -228,7 +207,7 @@ class VideoCallPresenter(view: VideoCallContact.View?, context: Context?) :
 
     override fun addLike() {
         synchronized(LOCK_LIKE_COUNT) {
-            mLikeCountMe2Other+=2
+            mLikeCountMe2Other += 2
         }
     }
 

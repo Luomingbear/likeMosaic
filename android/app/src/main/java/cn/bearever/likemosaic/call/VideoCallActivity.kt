@@ -15,6 +15,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import cn.bearever.likemosaic.Constant
 import cn.bearever.likemosaic.R
+import cn.bearever.likemosaic.RtcPacketObserver
 import cn.bearever.likemosaic.bean.MatchResultBean
 import cn.bearever.likemosaic.bean.SelectTopicBean
 import cn.bearever.likemosaic.bean.TopicBean
@@ -25,6 +26,7 @@ import cn.bearever.mingbase.app.util.ToastUtil
 import cn.bearever.mingbase.app.view.OnDoubleTouchListener
 import com.jaeger.library.StatusBarUtil
 import io.agora.rtc.RtcEngine
+import io.agora.rtc.mediaio.AgoraTextureView
 import io.agora.rtc.mediaio.IVideoSink
 import kotlinx.android.synthetic.main.activity_video_chat_view.*
 
@@ -94,7 +96,11 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
                 mPresenter?.addLike()
             }
         })
+
         showNote("快速选择几个你感兴趣的话题吧！也许会发现兴趣重叠的话题哦！")
+
+        RtcPacketObserver.register()
+
     }
 
     private fun startDoubleClickAnimation(v: View, x: Float, y: Float) {
@@ -149,6 +155,7 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
 
     override fun initPresenter() {
         mPresenter = VideoCallPresenter(this, this)
+        mPresenter!!.initEngineAndJoinChannel()
         startCall()
     }
 
@@ -254,6 +261,7 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
 
     override fun onUserJoin(uid: Int) {
         runOnUiThread {
+            Log.e("加入房间啦","----------")
             setupRemoteVideo(uid)
             setupLocalVideo()
         }
@@ -279,9 +287,8 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
         if (view != null) {
             return
         }
-        mRemoteView = MosaicVideoSink(this, false)
+        mRemoteView = MosaicVideoSink(this,false)
         remote_video_view_container?.addView(mRemoteView)
-
         mPresenter?.setRemoteVideoRenderer(uid, mRemoteView as IVideoSink)
         mRemoteView?.setTag(uid)
     }
@@ -306,11 +313,11 @@ class VideoCallActivity : BaseActivity<VideoCallPresenter?>(), VideoCallContact.
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         if (!mCallEnd) {
             leaveChannel()
         }
-        RtcEngine.destroy()
+        RtcPacketObserver.unregister()
+        super.onDestroy()
     }
 
     private var mLastShowNoteTime = 0L
